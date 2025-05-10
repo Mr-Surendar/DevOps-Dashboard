@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [fadeIn, setFadeIn] = useState(false)
+
+  useEffect(() => {
+    // Trigger fade-in animation after component mounts
+    setTimeout(() => {
+      setFadeIn(true)
+    }, 100)
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,10 +33,14 @@ export default function LoginPage() {
 
     try {
       await loginUser(email, password)
-      router.push("/dashboard")
+
+      // Fade out before navigation
+      setFadeIn(false)
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 500)
     } catch (err) {
       setError("Invalid credentials. Please try again.")
-    } finally {
       setLoading(false)
     }
   }
@@ -36,7 +48,11 @@ export default function LoginPage() {
   return (
     <div className="relative flex min-h-screen items-center justify-center">
       <SplineBackground />
-      <div className="relative z-10 w-full max-w-md p-4">
+      <div
+        className={`relative z-10 w-full max-w-md p-4 transition-all duration-800 ease-in-out transform ${
+          fadeIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
+        }`}
+      >
         <Card className="border-border/50 bg-background/80 backdrop-blur-md">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold">DevOps Dashboard</CardTitle>

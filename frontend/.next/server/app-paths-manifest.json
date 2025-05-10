@@ -1,8 +1,7 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
   "/login/page": "app/login/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
+  "/page": "app/page.js",
   "/dashboard/jenkins/page": "app/dashboard/jenkins/page.js",
-  "/dashboard/github/page": "app/dashboard/github/page.js",
-  "/dashboard/terraform/page": "app/dashboard/terraform/page.js"
+  "/dashboard/page": "app/dashboard/page.js"
 }

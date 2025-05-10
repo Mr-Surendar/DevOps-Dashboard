@@ -3,6 +3,7 @@ import { SystemMetrics } from "@/components/system-metrics"
 import { DevOpsTools } from "@/components/devops-tools"
 import { RecentDeployments } from "@/components/recent-deployments"
 import { PipelineStatus } from "@/components/pipeline-status"
+import { SonarQubeSummary } from "@/components/sonarqube-summary"
 import { DashboardSkeleton } from "@/components/dashboard-skeleton"
 
 export default function DashboardPage() {
@@ -12,6 +13,7 @@ export default function DashboardPage() {
       <Suspense fallback={<DashboardSkeleton />}>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <SystemMetrics />
+          <SonarQubeSummary />
         </div>
         <div className="grid gap-6 md:grid-cols-2">
           <PipelineStatus />

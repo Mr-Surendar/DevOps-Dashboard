@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, GitBranch, Box, Server, Cloud, Settings, LogOut, Activity, Cpu } from "lucide-react"
+import { LayoutDashboard, GitBranch, Box, Server, Cloud, Settings, LogOut, Activity, Cpu, Code } from "lucide-react"
 import { logoutUser } from "@/services/auth-service"
 import { useEffect, useState } from "react"
 
@@ -65,6 +65,11 @@ export function DashboardSidebar() {
       path: "/dashboard/terraform",
     },
     {
+      title: "SonarQube",
+      icon: Code,
+      path: "/dashboard/sonarqube",
+    },
+    {
       title: "System Metrics",
       icon: Cpu,
       path: "/dashboard/metrics",
@@ -77,10 +82,10 @@ export function DashboardSidebar() {
       collapsible="icon"
       className="bg-opacity-30 backdrop-blur-sm border-none p-0 shadow-lg rounded-r-xl transition-all duration-300 peer fixed h-screen"
     >
-      <SidebarHeader className="flex items-center justify-between p-3 bg-transparent">
-        <div className={`flex items-center gap-3 ${isCollapsed ? "justify-center w-full" : ""}`}>
+      <SidebarHeader className="flex items-center justify-between p-2 bg-transparent">
+        <div className={`flex items-center gap-2 ${isCollapsed ? "justify-center w-full" : ""}`}>
           <div className="size-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <Cpu className="size-15 text-white" />
+            <Cpu className="size-4 text-white" />
           </div>
           <span
             className={`font-bold text-lg glow-text transition-opacity duration-300 ${isCollapsed ? "opacity-0 absolute" : "opacity-100"}`}
@@ -88,10 +93,10 @@ export function DashboardSidebar() {
             DevOps
           </span>
         </div>
-        <SidebarTrigger className={`${isCollapsed ? "absolute right-5 top-4" : "absolute right-2 top-4"}`} />
+        <SidebarTrigger className={`${isCollapsed ? "absolute right-2 top-4" : "absolute right-2 top-4"}`} />
       </SidebarHeader>
       <SidebarContent className="bg-transparent p-0">
-        <SidebarMenu className="gap-5">
+        <SidebarMenu className="gap-0">
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.path}>
               <SidebarMenuButton asChild isActive={pathname === item.path} tooltip={item.title}>

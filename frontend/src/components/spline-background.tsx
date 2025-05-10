@@ -1,8 +1,10 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 export function SplineBackground() {
+  const [isLoaded, setIsLoaded] = useState(false)
+
   useEffect(() => {
     // Dynamically add the Spline Viewer script
     const script = document.createElement("script")
@@ -27,7 +29,8 @@ export function SplineBackground() {
     // Fade in the animation after a short delay
     setTimeout(() => {
       viewer.style.opacity = "1"
-    }, 50)
+      setIsLoaded(true)
+    }, 300)
 
     // Cleanup on component unmount
     return () => {
@@ -36,5 +39,9 @@ export function SplineBackground() {
     }
   }, [])
 
-  return null
+  return (
+    <div className={`fixed inset-0 z-0 transition-opacity duration-1000 ${isLoaded ? "opacity-100" : "opacity-0"}`}>
+      {/* This div serves as a container for the Spline background */}
+    </div>
+  )
 }
