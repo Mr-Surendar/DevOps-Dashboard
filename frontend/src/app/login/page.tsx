@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label"
 import { SplineBackground } from "@/components/spline-background"
 import { loginUser } from "@/services/auth-service"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -40,7 +41,7 @@ export default function LoginPage() {
         router.push("/dashboard")
       }, 500)
     } catch (err) {
-      setError("Invalid credentials. Please try again.")
+      setError(err.message || "Invalid credentials. Please try again.")
       setLoading(false)
     }
   }
@@ -60,6 +61,11 @@ export default function LoginPage() {
           </CardHeader>
           <form onSubmit={handleLogin}>
             <CardContent className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -81,7 +87,6 @@ export default function LoginPage() {
                   required
                 />
               </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
             </CardContent>
             <CardFooter>
               <Button type="submit" className="w-full" disabled={loading}>

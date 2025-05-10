@@ -10,7 +10,7 @@ export function middleware(request: NextRequest) {
   const isPublicPath = path === "/" || path === "/login"
 
   // Get the token from the cookies
-  const token = request.cookies.get("auth_token")?.value || ""
+  const token = request.cookies.get("token")?.value || ""
 
   // If the path is not public and there's no token, redirect to login
   if (!isPublicPath && !token) {

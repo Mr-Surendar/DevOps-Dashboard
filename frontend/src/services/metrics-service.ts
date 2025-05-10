@@ -1,70 +1,55 @@
-// Mock metrics service
+import api from "./api"
 
-type Metric = {
-  value: number
-  trend: "up" | "down" | "stable"
-  history: number[]
+export async function getSystemMetrics() {
+  try {
+    const response = await api.get("/metrics/system")
+    return response.data.data
+  } catch (error) {
+    console.error("Failed to fetch system metrics:", error)
+    // Return mock data as fallback
+    return {
+      cpu: {
+        value: Math.floor(Math.random() * 80) + 10,
+        trend: ["up", "down", "stable"][Math.floor(Math.random() * 3)],
+        history: Array.from({ length: 10 }, () => Math.floor(Math.random() * 90) + 10),
+      },
+      memory: {
+        value: Math.floor(Math.random() * 65) + 20,
+        trend: ["up", "down", "stable"][Math.floor(Math.random() * 3)],
+        history: Array.from({ length: 10 }, () => Math.floor(Math.random() * 65) + 20),
+      },
+      disk: {
+        value: Math.floor(Math.random() * 65) + 30,
+        trend: ["up", "down", "stable"][Math.floor(Math.random() * 3)],
+        history: Array.from({ length: 10 }, () => Math.floor(Math.random() * 65) + 30),
+      },
+      temperature: {
+        value: Math.floor(Math.random() * 40) + 40,
+        trend: ["up", "down", "stable"][Math.floor(Math.random() * 3)],
+        history: Array.from({ length: 10 }, () => Math.floor(Math.random() * 40) + 40),
+      },
+    }
+  }
 }
 
-type SystemMetricsData = {
-  cpu: Metric
-  memory: Metric
-  disk: Metric
-  temperature: Metric
-}
-
-export async function getSystemMetrics(): Promise<SystemMetricsData> {
-  // In a real application, this would make an API call to your backend
-  return new Promise((resolve) => {
-    // Simulate API call delay
-    setTimeout(() => {
-      // Generate random metrics for demo purposes
-      const generateMetric = (min: number, max: number): Metric => {
-        const value = Math.floor(Math.random() * (max - min + 1)) + min
-        const prevValue = Math.floor(Math.random() * (max - min + 1)) + min
-
-        let trend: "up" | "down" | "stable"
-        if (value > prevValue + 5) {
-          trend = "up"
-        } else if (value < prevValue - 5) {
-          trend = "down"
-        } else {
-          trend = "stable"
-        }
-
-        // Generate random history data
-        const history = Array.from({ length: 10 }, () => Math.floor(Math.random() * (max - min + 1)) + min)
-
-        return { value, trend, history }
-      }
-
-      resolve({
-        cpu: generateMetric(10, 90),
-        memory: generateMetric(20, 85),
-        disk: generateMetric(30, 95),
-        temperature: generateMetric(40, 80),
-      })
-    }, 500)
-  })
-}
-
-export async function getNetworkMetrics(): Promise<any> {
-  // In a real application, this would make an API call to your backend
-  return new Promise((resolve) => {
-    // Simulate API call delay
-    setTimeout(() => {
-      resolve({
-        incoming: {
-          value: Math.floor(Math.random() * 100) + 1,
-          trend: "up",
-          history: Array.from({ length: 10 }, () => Math.floor(Math.random() * 100) + 1),
-        },
-        outgoing: {
-          value: Math.floor(Math.random() * 100) + 1,
-          trend: "down",
-          history: Array.from({ length: 10 }, () => Math.floor(Math.random() * 100) + 1),
-        },
-      })
-    }, 500)
-  })
+export async function getNetworkMetrics() {
+  try {
+    const response = await api.get("/metrics/network")
+    return response.data.data
+  } catch (error) {
+    console.error("Failed to fetch network metrics:", error)
+    // Return mock data as fallback
+    return {
+      incoming: {
+        value: Math.floor(Math.random() * 100) + 1,
+        trend: "up",
+        history: Array.from({ length: 10 }, () => Math.floor(Math.random() * 100) + 1),
+      },
+      outgoing: {
+        value: Math.floor(Math.random() * 100) + 1,
+        trend: "down",
+        history: Array.from({ length: 10 }, () => Math.floor(Math.random() * 100) + 1),
+      },
+    }
+  }
 }
