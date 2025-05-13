@@ -14,7 +14,7 @@ export async function loginUser(email: string, password: string): Promise<{ toke
       token: response.data.token || "mock-jwt-token",
       user: response.data.user,
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Login error:", error)
     throw new Error(error.response?.data?.error || "Invalid credentials")
   }
@@ -80,7 +80,7 @@ export async function registerUser(
       token: response.data.token || "mock-jwt-token",
       user: response.data.user,
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Registration error:", error)
     throw new Error(error.response?.data?.error || "Registration failed")
   }

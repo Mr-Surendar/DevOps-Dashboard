@@ -1,6 +1,3 @@
-// Configuration for the frontend application
-
-// API base URL - change this based on environment
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 
 // Authentication settings

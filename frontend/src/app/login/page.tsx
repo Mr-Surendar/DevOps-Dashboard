@@ -41,7 +41,7 @@ export default function LoginPage() {
         router.push("/dashboard")
       }, 500)
     } catch (err) {
-      setError(err.message || "Invalid credentials. Please try again.")
+      setError(err instanceof Error ? err.message : "Invalid credentials. Please try again.")
       setLoading(false)
     }
   }

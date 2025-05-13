@@ -1,20 +1,20 @@
-import express from "express"
-import cors from "cors"
-import helmet from "helmet"
-import morgan from "morgan"
-import cookieParser from "cookie-parser"
-import dotenv from "dotenv"
-import { connectDB } from "./config/database"
-import authRoutes from "./routes/auth.routes"
-import jenkinsRoutes from "./routes/jenkins.routes"
-import githubRoutes from "./routes/github.routes"
-import dockerRoutes from "./routes/docker.routes"
-import kubernetesRoutes from "./routes/kubernetes.routes"
-import terraformRoutes from "./routes/terraform.routes"
-import sonarqubeRoutes from "./routes/sonarqube.routes"
-import metricsRoutes from "./routes/metrics.routes"
-import { errorHandler } from "./middleware/error.middleware"
-import { validateToken } from "./middleware/auth.middleware"
+const express = require("express")
+const cors = require("cors")
+const helmet = require("helmet")
+const morgan = require("morgan")
+const cookieParser = require("cookie-parser")
+const dotenv = require("dotenv")
+const { connectDB } = require("./config/database")
+const authRoutes = require("./routes/auth.routes")
+const jenkinsRoutes = require("./routes/jenkins.routes")
+const githubRoutes = require("./routes/github.routes")
+const dockerRoutes = require("./routes/docker.routes")
+const kubernetesRoutes = require("./routes/kubernetes.routes")
+const terraformRoutes = require("./routes/terraform.routes")
+const sonarqubeRoutes = require("./routes/sonarqube.routes")
+const metricsRoutes = require("./routes/metrics.routes")
+const { errorHandler } = require("./middleware/error.middleware")
+const { validateToken } = require("./middleware/auth.middleware")
 
 // Load environment variables
 dotenv.config()
@@ -26,18 +26,39 @@ const PORT = process.env.PORT || 5000
 // Connect to database
 connectDB()
 
-// Middleware
+// CORS middleware - must come before other middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: "http://localhost:3000", // Hardcode the origin for now
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 )
-app.use(helmet()) // Security headers
+
+// Handle preflight requests
+app.options("*", cors())
+
+// Configure helmet with CORS in mind
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }),
+)
+
 app.use(morgan("dev")) // Logging
 app.use(express.json()) // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })) // Parse URL-encoded bodies
 app.use(cookieParser()) // Parse cookies
+
+// Add explicit CORS headers for all responses
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "http://localhost:3000")
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
+  res.header("Access-Control-Allow-Credentials", "true")
+  next()
+})
 
 // Routes
 app.use("/api/auth", authRoutes)
@@ -64,4 +85,4 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
 
-export default app
+module.exports = app
