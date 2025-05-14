@@ -11,18 +11,56 @@ dotenv.config()
 
 // Initialize express app
 const app = express()
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 3001
+
+console.log('Server starting...')
+console.log('Environment:', process.env.NODE_ENV || 'development')
+console.log('Port:', PORT)
 
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: "http://localhost:3000",
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
   }),
 )
+
+// Add request debugging middleware
+app.use((req, res, next) => {
+  console.log('\n=== New Request ===')
+  console.log('Time:', new Date().toISOString())
+  console.log('Method:', req.method)
+  console.log('Path:', req.path)
+  console.log('Headers:', JSON.stringify(req.headers, null, 2))
+  console.log('Body:', JSON.stringify(req.body, null, 2))
+  console.log('Query:', JSON.stringify(req.query, null, 2))
+  console.log('===================\n')
+  next();
+});
+
+// Add explicit CORS headers for all responses
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Allow-Credentials", "true");
+  next();
+});
+
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({
+    success: false,
+    error: err.message
+  });
+});
 
 // MongoDB connection
 const connectDB = async () => {
@@ -80,6 +118,9 @@ userSchema.pre("save", async function (next) {
 
 // Compare password method
 userSchema.methods.comparePassword = async function (candidatePassword) {
+  console.log('Comparing passwords:')
+  console.log('Candidate password:', candidatePassword)
+  console.log('Stored password hash:', this.password)
   return await bcrypt.compare(candidatePassword, this.password)
 }
 
@@ -185,11 +226,14 @@ app.post("/api/auth/register", async (req, res) => {
 
 // @route   POST /api/auth/login
 app.post("/api/auth/login", async (req, res) => {
+  console.log("Login attempt started")
   try {
     const { email, password } = req.body
-
+    console.log("Login attempt for email:", email)
+    
     // Check if email and password are provided
     if (!email || !password) {
+      console.log("Missing email or password")
       return res.status(400).json({
         success: false,
         error: "Please provide email and password",
@@ -197,17 +241,24 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     // Check if user exists
+    console.log("Searching for user in database")
     const user = await User.findOne({ email }).select("+password")
     if (!user) {
+      console.log("User not found:", email)
       return res.status(401).json({
         success: false,
         error: "Invalid credentials",
       })
     }
+    console.log("User found:", user.email)
 
     // Check if password matches
+    console.log("Comparing passwords")
     const isMatch = await user.comparePassword(password)
+    console.log("Password match result:", isMatch)
+    
     if (!isMatch) {
+      console.log("Password does not match")
       return res.status(401).json({
         success: false,
         error: "Invalid credentials",
@@ -215,11 +266,15 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     // Generate token
+    console.log("Generating JWT token")
     const token = generateToken(user._id)
+    console.log("Token generated successfully")
 
     // Set token in cookie
+    console.log("Setting token cookie")
     setTokenCookie(res, token)
 
+    console.log("Login successful for user:", email)
     res.status(200).json({
       success: true,
       token,
@@ -231,6 +286,7 @@ app.post("/api/auth/login", async (req, res) => {
       },
     })
   } catch (error) {
+    console.error("Login error:", error)
     res.status(500).json({
       success: false,
       error: error.message,
@@ -1081,7 +1137,30 @@ connectDB().then(() => {
   createAdminUser()
 
   // Start server
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, '0.0.0.0', (error) => {
+    if (error) {
+      console.error('Error starting server:', error);
+      process.exit(1);
+    }
+    console.log(`\n=== Server Started ===`)
     console.log(`Server running on port ${PORT}`)
-  })
+    console.log(`Local URL: http://localhost:${PORT}`)
+    console.log(`Network URL: http://0.0.0.0:${PORT}`)
+    console.log(`Health check: http://localhost:${PORT}/health`)
+    console.log(`=====================\n`)
+  });
+
+  // Handle server errors
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`Port ${PORT} is already in use. Please try a different port.`);
+    } else {
+      console.error('Server error:', error);
+    }
+    process.exit(1);
+  });
+
+}).catch(err => {
+  console.error('Failed to start server:', err)
+  process.exit(1)
 })
