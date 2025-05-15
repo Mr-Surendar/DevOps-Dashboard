@@ -4,8 +4,9 @@ import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { GitBranch, Box, Server, Cloud, Activity, AlertTriangle, CheckCircle } from "lucide-react"
-import { getToolsStatus } from "@/services/devops-service";
+import { GitBranch, Box, Server, Cloud, Activity, AlertTriangle, CheckCircle, RefreshCw } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { getToolsStatus } from "@/services/devops-service"
 
 type ToolStatus = {
   status: "healthy" | "warning" | "error"
@@ -25,71 +26,22 @@ type DevOpsToolsData = {
 }
 
 export function DevOpsTools() {
-  const [toolsData, setToolsData] = useState<DevOpsToolsData>({
-    jenkins: {
-      status: "healthy",
-      message: "All pipelines running normally",
-      lastUpdated: new Date().toISOString(),
-      metrics: {
-        pipelines: 12,
-        running: 2,
-        success: 8,
-        failed: 2,
-      },
-    },
-    github: {
-      status: "healthy",
-      message: "All repositories accessible",
-      lastUpdated: new Date().toISOString(),
-      metrics: {
-        repositories: 8,
-        pullRequests: 5,
-        issues: 12,
-        contributors: 7,
-      },
-    },
-    docker: {
-      status: "warning",
-      message: "High resource usage detected",
-      lastUpdated: new Date().toISOString(),
-      metrics: {
-        containers: 24,
-        running: 18,
-        stopped: 4,
-        images: 32,
-      },
-    },
-    kubernetes: {
-      status: "error",
-      message: "Pod crash loop detected in production namespace",
-      lastUpdated: new Date().toISOString(),
-      metrics: {
-        nodes: 5,
-        pods: 48,
-        services: 12,
-        deployments: 15,
-      },
-    },
-    terraform: {
-      status: "healthy",
-      message: "Infrastructure up to date",
-      lastUpdated: new Date().toISOString(),
-      metrics: {
-        resources: 120,
-        modules: 8,
-        providers: 5,
-        workspaces: 3,
-      },
-    },
-  })
+  const [toolsData, setToolsData] = useState<DevOpsToolsData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchToolsStatus = async () => {
       try {
+        setLoading(true)
         const data = await getToolsStatus()
         setToolsData(data)
+        setError(null)
       } catch (error) {
         console.error("Failed to fetch tools status", error)
+        setError("Failed to fetch DevOps tools status. Please check your connection.")
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -122,6 +74,61 @@ export function DevOpsTools() {
       default:
         return ""
     }
+  }
+
+  if (loading) {
+    return (
+      <Card className="gradient-border bg-card/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>DevOps Tools Status</CardTitle>
+          <CardDescription>Loading DevOps tools status...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex h-40 items-center justify-center">
+            <RefreshCw className="size-8 animate-spin text-primary" />
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card className="gradient-border bg-card/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>DevOps Tools Status</CardTitle>
+          <CardDescription>Error loading DevOps tools</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center">
+            <AlertTriangle className="mx-auto mb-2 size-8 text-red-500" />
+            <p className="text-red-500 mb-4">{error}</p>
+            <Button variant="outline" onClick={() => getToolsStatus()}>
+              <RefreshCw className="mr-2 size-4" /> Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!toolsData) {
+    return (
+      <Card className="gradient-border bg-card/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>DevOps Tools Status</CardTitle>
+          <CardDescription>No data available</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border p-4 text-center">
+            <p className="text-muted-foreground">No DevOps tools data available. Please configure your tools.</p>
+            <Button variant="outline" className="mt-4" onClick={() => getToolsStatus()}>
+              <RefreshCw className="mr-2 size-4" /> Refresh
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

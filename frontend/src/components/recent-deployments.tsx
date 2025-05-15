@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { RefreshCw, AlertTriangle } from "lucide-react"
 import { getRecentDeployments } from "@/services/deployment-service"
 
 type Deployment = {
@@ -19,60 +21,22 @@ type Deployment = {
 }
 
 export function RecentDeployments() {
-  const [deployments, setDeployments] = useState<Deployment[]>([
-    {
-      id: "deploy-789",
-      environment: "production",
-      status: "success",
-      version: "v1.2.3",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-      deployer: {
-        name: "Mr.Surendar",
-        avatar: "/placeholder.svg?height=32&width=32",
-      },
-    },
-    {
-      id: "deploy-788",
-      environment: "staging",
-      status: "in-progress",
-      version: "v1.2.4",
-      timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-      deployer: {
-        name: "Mr.Surendar",
-        avatar: "/placeholder.svg?height=32&width=32",
-      },
-    },
-    {
-      id: "deploy-787",
-      environment: "production",
-      status: "rollback",
-      version: "v1.2.2",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-      deployer: {
-        name: "Mr.Surendar",
-        avatar: "/placeholder.svg?height=32&width=32",
-      },
-    },
-    {
-      id: "deploy-786",
-      environment: "development",
-      status: "failed",
-      version: "v1.2.5-dev",
-      timestamp: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
-      deployer: {
-        name: "Mr.Surendar",
-        avatar: "/placeholder.svg?height=32&width=32",
-      },
-    },
-  ])
+  const [deployments, setDeployments] = useState<Deployment[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchDeployments = async () => {
       try {
+        setLoading(true)
         const data = await getRecentDeployments()
         setDeployments(data)
+        setError(null)
       } catch (error) {
         console.error("Failed to fetch recent deployments", error)
+        setError("Failed to fetch deployment data. Please check your deployment service connection.")
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -107,6 +71,63 @@ export function RecentDeployments() {
       default:
         return null
     }
+  }
+
+  if (loading && deployments.length === 0) {
+    return (
+      <Card className="gradient-border bg-card/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>Recent Deployments</CardTitle>
+          <CardDescription>Loading deployment data...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex h-40 items-center justify-center">
+            <RefreshCw className="size-8 animate-spin text-primary" />
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card className="gradient-border bg-card/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>Recent Deployments</CardTitle>
+          <CardDescription>Error loading deployment data</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center">
+            <AlertTriangle className="mx-auto mb-2 size-8 text-red-500" />
+            <p className="text-red-500 mb-4">{error}</p>
+            <Button variant="outline" onClick={() => getRecentDeployments()}>
+              <RefreshCw className="mr-2 size-4" /> Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (deployments.length === 0) {
+    return (
+      <Card className="gradient-border bg-card/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>Recent Deployments</CardTitle>
+          <CardDescription>No deployment data available</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border p-4 text-center">
+            <p className="text-muted-foreground">
+              No deployment data available. Please configure your deployment service.
+            </p>
+            <Button variant="outline" className="mt-4" onClick={() => getRecentDeployments()}>
+              <RefreshCw className="mr-2 size-4" /> Refresh
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { RefreshCw, AlertTriangle } from "lucide-react"
 import { getPipelineStatus } from "@/services/jenkins-service"
 
 type Pipeline = {
@@ -15,48 +17,22 @@ type Pipeline = {
 }
 
 export function PipelineStatus() {
-  const [pipelines, setPipelines] = useState<Pipeline[]>([
-    {
-      id: "build-123",
-      name: "main-build",
-      status: "success",
-      branch: "main",
-      duration: "2m 34s",
-      timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
-    },
-    {
-      id: "deploy-45",
-      name: "production-deploy",
-      status: "running",
-      branch: "main",
-      duration: "1m 12s",
-      timestamp: new Date(Date.now() - 1000 * 60 * 1).toISOString(),
-    },
-    {
-      id: "test-67",
-      name: "integration-tests",
-      status: "failed",
-      branch: "feature/auth",
-      duration: "3m 45s",
-      timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    },
-    {
-      id: "build-124",
-      name: "feature-build",
-      status: "pending",
-      branch: "feature/dashboard",
-      duration: "0s",
-      timestamp: new Date(Date.now() - 1000 * 30).toISOString(),
-    },
-  ])
+  const [pipelines, setPipelines] = useState<Pipeline[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchPipelines = async () => {
       try {
+        setLoading(true)
         const data = await getPipelineStatus()
         setPipelines(data)
+        setError(null)
       } catch (error) {
         console.error("Failed to fetch pipeline status", error)
+        setError("Failed to fetch pipeline status. Please check your Jenkins connection.")
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -78,6 +54,63 @@ export function PipelineStatus() {
       default:
         return null
     }
+  }
+
+  if (loading && pipelines.length === 0) {
+    return (
+      <Card className="gradient-border bg-card/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>Pipeline Status</CardTitle>
+          <CardDescription>Loading pipeline data...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex h-40 items-center justify-center">
+            <RefreshCw className="size-8 animate-spin text-primary" />
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card className="gradient-border bg-card/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>Pipeline Status</CardTitle>
+          <CardDescription>Error loading pipeline data</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center">
+            <AlertTriangle className="mx-auto mb-2 size-8 text-red-500" />
+            <p className="text-red-500 mb-4">{error}</p>
+            <Button variant="outline" onClick={() => getPipelineStatus()}>
+              <RefreshCw className="mr-2 size-4" /> Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (pipelines.length === 0) {
+    return (
+      <Card className="gradient-border bg-card/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>Pipeline Status</CardTitle>
+          <CardDescription>No pipeline data available</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border p-4 text-center">
+            <p className="text-muted-foreground">
+              No pipeline data available. Please configure your Jenkins integration.
+            </p>
+            <Button variant="outline" className="mt-4" onClick={() => getPipelineStatus()}>
+              <RefreshCw className="mr-2 size-4" /> Refresh
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

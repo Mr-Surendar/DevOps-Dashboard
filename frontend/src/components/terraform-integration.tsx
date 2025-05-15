@@ -44,9 +44,9 @@ export function TerraformIntegration() {
       try {
         setLoading(true)
         const data = await getTerraformData()
-        setResources(data.resources)
-        setModules(data.modules)
-        setWorkspaces(data.workspaces)
+        setResources(data.resources || [])
+        setModules(data.modules || [])
+        setWorkspaces(data.workspaces || [])
         setError(null)
       } catch (error) {
         console.error("Failed to fetch Terraform data", error)
@@ -66,97 +66,12 @@ export function TerraformIntegration() {
       await applyTerraform(workspace)
       // Refresh data after applying
       const data = await getTerraformData()
-      setWorkspaces(data.workspaces)
+      setWorkspaces(data.workspaces || [])
     } catch (error) {
       console.error("Failed to apply Terraform changes", error)
       setError("Failed to apply changes. Please check your permissions.")
     }
   }
-
-  // Mock data for demonstration
-  const mockResources: TerraformResource[] = [
-    {
-      id: "aws_instance.api_server",
-      name: "api_server",
-      type: "aws_instance",
-      provider: "aws",
-      status: "created",
-      lastModified: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
-    },
-    {
-      id: "aws_db_instance.database",
-      name: "database",
-      type: "aws_db_instance",
-      provider: "aws",
-      status: "updated",
-      lastModified: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString(),
-    },
-    {
-      id: "aws_s3_bucket.storage",
-      name: "storage",
-      type: "aws_s3_bucket",
-      provider: "aws",
-      status: "created",
-      lastModified: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-    },
-    {
-      id: "aws_security_group.api_sg",
-      name: "api_sg",
-      type: "aws_security_group",
-      provider: "aws",
-      status: "planned",
-      lastModified: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    },
-  ]
-
-  const mockModules: TerraformModule[] = [
-    {
-      name: "vpc",
-      source: "terraform-aws-modules/vpc/aws",
-      version: "3.14.0",
-      resources: 23,
-    },
-    {
-      name: "security-groups",
-      source: "terraform-aws-modules/security-group/aws",
-      version: "4.9.0",
-      resources: 12,
-    },
-    {
-      name: "rds",
-      source: "terraform-aws-modules/rds/aws",
-      version: "5.1.0",
-      resources: 8,
-    },
-  ]
-
-  const mockWorkspaces: TerraformWorkspace[] = [
-    {
-      name: "production",
-      status: "applied",
-      lastRun: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-      resources: 45,
-      changes: 0,
-    },
-    {
-      name: "staging",
-      status: "planning",
-      lastRun: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-      resources: 42,
-      changes: 3,
-    },
-    {
-      name: "development",
-      status: "error",
-      lastRun: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-      resources: 38,
-      changes: 5,
-    },
-  ]
-
-  const displayResources = resources.length > 0 ? resources : mockResources
-  const displayModules = modules.length > 0 ? modules : mockModules
-  const displayWorkspaces = workspaces.length > 0 ? workspaces : mockWorkspaces
 
   const getResourceStatusBadge = (status: string) => {
     switch (status) {
@@ -219,7 +134,7 @@ export function TerraformIntegration() {
     )
   }
 
-  if (error && resources.length === 0 && modules.length === 0 && workspaces.length === 0) {
+  if (error) {
     return (
       <Card className="gradient-border bg-card/50 backdrop-blur-sm">
         <CardHeader>
@@ -230,8 +145,29 @@ export function TerraformIntegration() {
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center">
             <AlertTriangle className="mx-auto mb-2 size-8 text-red-500" />
             <p className="text-red-500">{error}</p>
-            <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+            <Button variant="outline" className="mt-4" onClick={() => getTerraformData()}>
               <RefreshCw className="mr-2 size-4" /> Retry Connection
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (resources.length === 0 && modules.length === 0 && workspaces.length === 0) {
+    return (
+      <Card className="gradient-border bg-card/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>Terraform Integration</CardTitle>
+          <CardDescription>No Terraform data available</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border p-4 text-center">
+            <p className="text-muted-foreground">
+              No Terraform resources available. Please check your Terraform configuration.
+            </p>
+            <Button variant="outline" className="mt-4" onClick={() => getTerraformData()}>
+              <RefreshCw className="mr-2 size-4" /> Refresh
             </Button>
           </div>
         </CardContent>
@@ -246,7 +182,7 @@ export function TerraformIntegration() {
           <CardTitle>Terraform Integration</CardTitle>
           <CardDescription>Infrastructure as code management</CardDescription>
         </div>
-        <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+        <Button variant="outline" size="sm" onClick={() => getTerraformData()}>
           <RefreshCw className="mr-2 size-4" /> Refresh
         </Button>
       </CardHeader>
@@ -259,94 +195,112 @@ export function TerraformIntegration() {
           </TabsList>
 
           <TabsContent value="workspaces" className="space-y-4">
-            {displayWorkspaces.map((workspace) => (
-              <div key={workspace.name} className="rounded-lg border p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {getWorkspaceStatusIcon(workspace.status)}
-                    <h3 className="text-lg font-semibold">{workspace.name}</h3>
-                    {getWorkspaceStatusBadge(workspace.status)}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleApplyTerraform(workspace.name)}
-                      disabled={workspace.status === "planning" || workspace.changes === 0}
-                    >
-                      <Play className="mr-1 size-3" /> Apply
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      <Cloud className="mr-1 size-3" /> Plan
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Resources</div>
-                    <div className="text-sm font-medium">{workspace.resources}</div>
-                  </div>
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Pending Changes</div>
-                    <div className="text-sm font-medium">{workspace.changes}</div>
-                  </div>
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Last Run</div>
-                    <div className="text-sm font-medium">{new Date(workspace.lastRun).toLocaleString()}</div>
-                  </div>
-                </div>
+            {workspaces.length === 0 ? (
+              <div className="rounded-lg border p-4 text-center">
+                <p className="text-muted-foreground">No workspaces available</p>
               </div>
-            ))}
+            ) : (
+              workspaces.map((workspace) => (
+                <div key={workspace.name} className="rounded-lg border p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {getWorkspaceStatusIcon(workspace.status)}
+                      <h3 className="text-lg font-semibold">{workspace.name}</h3>
+                      {getWorkspaceStatusBadge(workspace.status)}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleApplyTerraform(workspace.name)}
+                        disabled={workspace.status === "planning" || workspace.changes === 0}
+                      >
+                        <Play className="mr-1 size-3" /> Apply
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <Cloud className="mr-1 size-3" /> Plan
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Resources</div>
+                      <div className="text-sm font-medium">{workspace.resources}</div>
+                    </div>
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Pending Changes</div>
+                      <div className="text-sm font-medium">{workspace.changes}</div>
+                    </div>
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Last Run</div>
+                      <div className="text-sm font-medium">{new Date(workspace.lastRun).toLocaleString()}</div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </TabsContent>
 
           <TabsContent value="resources" className="space-y-4">
-            {displayResources.map((resource) => (
-              <div key={resource.id} className="rounded-lg border p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">{resource.name}</h3>
-                    <p className="text-sm text-muted-foreground">{resource.type}</p>
-                  </div>
-                  {getResourceStatusBadge(resource.status)}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Provider</div>
-                    <div className="text-sm font-medium">{resource.provider}</div>
-                  </div>
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Last Modified</div>
-                    <div className="text-sm font-medium">{new Date(resource.lastModified).toLocaleString()}</div>
-                  </div>
-                </div>
-
-                <div className="mt-3 text-xs text-muted-foreground truncate">ID: {resource.id}</div>
+            {resources.length === 0 ? (
+              <div className="rounded-lg border p-4 text-center">
+                <p className="text-muted-foreground">No resources available</p>
               </div>
-            ))}
+            ) : (
+              resources.map((resource) => (
+                <div key={resource.id} className="rounded-lg border p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold">{resource.name}</h3>
+                      <p className="text-sm text-muted-foreground">{resource.type}</p>
+                    </div>
+                    {getResourceStatusBadge(resource.status)}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Provider</div>
+                      <div className="text-sm font-medium">{resource.provider}</div>
+                    </div>
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Last Modified</div>
+                      <div className="text-sm font-medium">{new Date(resource.lastModified).toLocaleString()}</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 text-xs text-muted-foreground truncate">ID: {resource.id}</div>
+                </div>
+              ))
+            )}
           </TabsContent>
 
           <TabsContent value="modules" className="space-y-4">
-            {displayModules.map((module) => (
-              <div key={module.name} className="rounded-lg border p-4">
-                <div className="mb-3">
-                  <h3 className="text-lg font-semibold">{module.name}</h3>
-                  <p className="text-sm text-muted-foreground">{module.source}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Version</div>
-                    <div className="text-sm font-medium">{module.version}</div>
-                  </div>
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Resources</div>
-                    <div className="text-sm font-medium">{module.resources}</div>
-                  </div>
-                </div>
+            {modules.length === 0 ? (
+              <div className="rounded-lg border p-4 text-center">
+                <p className="text-muted-foreground">No modules available</p>
               </div>
-            ))}
+            ) : (
+              modules.map((module) => (
+                <div key={module.name} className="rounded-lg border p-4">
+                  <div className="mb-3">
+                    <h3 className="text-lg font-semibold">{module.name}</h3>
+                    <p className="text-sm text-muted-foreground">{module.source}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Version</div>
+                      <div className="text-sm font-medium">{module.version}</div>
+                    </div>
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Resources</div>
+                      <div className="text-sm font-medium">{module.resources}</div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>

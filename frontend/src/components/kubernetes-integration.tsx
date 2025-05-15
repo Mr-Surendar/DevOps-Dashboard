@@ -52,9 +52,9 @@ export function KubernetesIntegration() {
       try {
         setLoading(true)
         const data = await getKubernetesData()
-        setPods(data.pods)
-        setDeployments(data.deployments)
-        setNodes(data.nodes)
+        setPods(data.pods || [])
+        setDeployments(data.deployments || [])
+        setNodes(data.nodes || [])
         setError(null)
       } catch (error) {
         console.error("Failed to fetch Kubernetes data", error)
@@ -68,136 +68,6 @@ export function KubernetesIntegration() {
     const interval = setInterval(fetchKubernetesData, 10000)
     return () => clearInterval(interval)
   }, [])
-
-  // Mock data for demonstration
-  const mockPods: KubernetesPod[] = [
-    {
-      name: "api-service-pod-1",
-      namespace: "production",
-      status: "Running",
-      restarts: 0,
-      age: "3d",
-      cpu: "120m",
-      memory: "256Mi",
-      node: "worker-1",
-    },
-    {
-      name: "database-pod-1",
-      namespace: "production",
-      status: "Running",
-      restarts: 2,
-      age: "5d",
-      cpu: "500m",
-      memory: "1Gi",
-      node: "worker-2",
-    },
-    {
-      name: "cache-pod-1",
-      namespace: "production",
-      status: "Failed",
-      restarts: 5,
-      age: "1d",
-      cpu: "100m",
-      memory: "128Mi",
-      node: "worker-1",
-    },
-    {
-      name: "frontend-pod-1",
-      namespace: "staging",
-      status: "Pending",
-      restarts: 0,
-      age: "2h",
-      cpu: "50m",
-      memory: "128Mi",
-      node: "worker-3",
-    },
-  ]
-
-  const mockDeployments: KubernetesDeployment[] = [
-    {
-      name: "api-service",
-      namespace: "production",
-      replicas: "3/3",
-      availableReplicas: 3,
-      updatedReplicas: 3,
-      age: "3d",
-      strategy: "RollingUpdate",
-    },
-    {
-      name: "database",
-      namespace: "production",
-      replicas: "1/1",
-      availableReplicas: 1,
-      updatedReplicas: 1,
-      age: "5d",
-      strategy: "Recreate",
-    },
-    {
-      name: "cache",
-      namespace: "production",
-      replicas: "0/2",
-      availableReplicas: 0,
-      updatedReplicas: 0,
-      age: "1d",
-      strategy: "RollingUpdate",
-    },
-    {
-      name: "frontend",
-      namespace: "staging",
-      replicas: "2/3",
-      availableReplicas: 2,
-      updatedReplicas: 2,
-      age: "2h",
-      strategy: "RollingUpdate",
-    },
-  ]
-
-  const mockNodes: KubernetesNode[] = [
-    {
-      name: "master-1",
-      status: "Ready",
-      roles: ["control-plane", "master"],
-      age: "30d",
-      version: "v1.25.4",
-      cpu: "2/4",
-      memory: "4Gi/8Gi",
-      pods: "12/110",
-    },
-    {
-      name: "worker-1",
-      status: "Ready",
-      roles: ["worker"],
-      age: "30d",
-      version: "v1.25.4",
-      cpu: "3/8",
-      memory: "12Gi/16Gi",
-      pods: "28/110",
-    },
-    {
-      name: "worker-2",
-      status: "Ready",
-      roles: ["worker"],
-      age: "30d",
-      version: "v1.25.4",
-      cpu: "6/8",
-      memory: "14Gi/16Gi",
-      pods: "32/110",
-    },
-    {
-      name: "worker-3",
-      status: "NotReady",
-      roles: ["worker"],
-      age: "30d",
-      version: "v1.25.4",
-      cpu: "0/8",
-      memory: "0Gi/16Gi",
-      pods: "0/110",
-    },
-  ]
-
-  const displayPods = pods.length > 0 ? pods : mockPods
-  const displayDeployments = deployments.length > 0 ? deployments : mockDeployments
-  const displayNodes = nodes.length > 0 ? nodes : mockNodes
 
   const getPodStatusBadge = (status: string) => {
     switch (status) {
@@ -245,7 +115,7 @@ export function KubernetesIntegration() {
     )
   }
 
-  if (error && pods.length === 0 && deployments.length === 0 && nodes.length === 0) {
+  if (error) {
     return (
       <Card className="gradient-border bg-card/50 backdrop-blur-sm">
         <CardHeader>
@@ -256,8 +126,29 @@ export function KubernetesIntegration() {
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center">
             <AlertTriangle className="mx-auto mb-2 size-8 text-red-500" />
             <p className="text-red-500">{error}</p>
-            <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+            <Button variant="outline" className="mt-4" onClick={() => getKubernetesData()}>
               <RefreshCw className="mr-2 size-4" /> Retry Connection
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (pods.length === 0 && deployments.length === 0 && nodes.length === 0) {
+    return (
+      <Card className="gradient-border bg-card/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>Kubernetes Integration</CardTitle>
+          <CardDescription>No Kubernetes data available</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border p-4 text-center">
+            <p className="text-muted-foreground">
+              No Kubernetes resources available. Please check your Kubernetes configuration.
+            </p>
+            <Button variant="outline" className="mt-4" onClick={() => getKubernetesData()}>
+              <RefreshCw className="mr-2 size-4" /> Refresh
             </Button>
           </div>
         </CardContent>
@@ -272,7 +163,7 @@ export function KubernetesIntegration() {
           <CardTitle>Kubernetes Integration</CardTitle>
           <CardDescription>Cluster, deployment, and pod management</CardDescription>
         </div>
-        <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+        <Button variant="outline" size="sm" onClick={() => getKubernetesData()}>
           <RefreshCw className="mr-2 size-4" /> Refresh
         </Button>
       </CardHeader>
@@ -285,132 +176,150 @@ export function KubernetesIntegration() {
           </TabsList>
 
           <TabsContent value="pods" className="space-y-4">
-            {displayPods.map((pod) => (
-              <div key={pod.name} className="rounded-lg border p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">{pod.name}</h3>
-                    <p className="text-sm text-muted-foreground">Namespace: {pod.namespace}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getPodStatusBadge(pod.status)}
-                    <Button size="sm" variant="outline" className="text-red-500">
-                      <Trash2 className="mr-1 size-3" /> Delete
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Restarts</div>
-                    <div className="text-sm font-medium">{pod.restarts}</div>
-                  </div>
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Age</div>
-                    <div className="text-sm font-medium">{pod.age}</div>
-                  </div>
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">CPU</div>
-                    <div className="text-sm font-medium">{pod.cpu}</div>
-                  </div>
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Memory</div>
-                    <div className="text-sm font-medium">{pod.memory}</div>
-                  </div>
-                </div>
-
-                <div className="mt-3 text-xs text-muted-foreground">Node: {pod.node}</div>
+            {pods.length === 0 ? (
+              <div className="rounded-lg border p-4 text-center">
+                <p className="text-muted-foreground">No pods available</p>
               </div>
-            ))}
+            ) : (
+              pods.map((pod) => (
+                <div key={pod.name} className="rounded-lg border p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold">{pod.name}</h3>
+                      <p className="text-sm text-muted-foreground">Namespace: {pod.namespace}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getPodStatusBadge(pod.status)}
+                      <Button size="sm" variant="outline" className="text-red-500">
+                        <Trash2 className="mr-1 size-3" /> Delete
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Restarts</div>
+                      <div className="text-sm font-medium">{pod.restarts}</div>
+                    </div>
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Age</div>
+                      <div className="text-sm font-medium">{pod.age}</div>
+                    </div>
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">CPU</div>
+                      <div className="text-sm font-medium">{pod.cpu}</div>
+                    </div>
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Memory</div>
+                      <div className="text-sm font-medium">{pod.memory}</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 text-xs text-muted-foreground">Node: {pod.node}</div>
+                </div>
+              ))
+            )}
           </TabsContent>
 
           <TabsContent value="deployments" className="space-y-4">
-            {displayDeployments.map((deployment) => (
-              <div key={deployment.name} className="rounded-lg border p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">{deployment.name}</h3>
-                    <p className="text-sm text-muted-foreground">Namespace: {deployment.namespace}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className={deployment.availableReplicas === 0 ? "bg-red-500" : "bg-green-500"}>
-                      {deployment.replicas}
-                    </Badge>
-                    <Button size="sm" variant="outline">
-                      <RefreshCw className="mr-1 size-3" /> Restart
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      <Square className="mr-1 size-3" /> Scale
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Available</div>
-                    <div className="text-sm font-medium">{deployment.availableReplicas}</div>
-                  </div>
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Updated</div>
-                    <div className="text-sm font-medium">{deployment.updatedReplicas}</div>
-                  </div>
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Age</div>
-                    <div className="text-sm font-medium">{deployment.age}</div>
-                  </div>
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Strategy</div>
-                    <div className="text-sm font-medium">{deployment.strategy}</div>
-                  </div>
-                </div>
+            {deployments.length === 0 ? (
+              <div className="rounded-lg border p-4 text-center">
+                <p className="text-muted-foreground">No deployments available</p>
               </div>
-            ))}
+            ) : (
+              deployments.map((deployment) => (
+                <div key={deployment.name} className="rounded-lg border p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold">{deployment.name}</h3>
+                      <p className="text-sm text-muted-foreground">Namespace: {deployment.namespace}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={deployment.availableReplicas === 0 ? "bg-red-500" : "bg-green-500"}>
+                        {deployment.replicas}
+                      </Badge>
+                      <Button size="sm" variant="outline">
+                        <RefreshCw className="mr-1 size-3" /> Restart
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <Square className="mr-1 size-3" /> Scale
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Available</div>
+                      <div className="text-sm font-medium">{deployment.availableReplicas}</div>
+                    </div>
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Updated</div>
+                      <div className="text-sm font-medium">{deployment.updatedReplicas}</div>
+                    </div>
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Age</div>
+                      <div className="text-sm font-medium">{deployment.age}</div>
+                    </div>
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Strategy</div>
+                      <div className="text-sm font-medium">{deployment.strategy}</div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </TabsContent>
 
           <TabsContent value="nodes" className="space-y-4">
-            {displayNodes.map((node) => (
-              <div key={node.name} className="rounded-lg border p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">{node.name}</h3>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {node.roles.map((role, index) => (
-                        <Badge key={index} variant="outline">
-                          {role}
-                        </Badge>
-                      ))}
+            {nodes.length === 0 ? (
+              <div className="rounded-lg border p-4 text-center">
+                <p className="text-muted-foreground">No nodes available</p>
+              </div>
+            ) : (
+              nodes.map((node) => (
+                <div key={node.name} className="rounded-lg border p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold">{node.name}</h3>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {node.roles.map((role, index) => (
+                          <Badge key={index} variant="outline">
+                            {role}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getNodeStatusBadge(node.status)}
+                      <Button size="sm" variant="outline">
+                        <Server className="mr-1 size-3" /> Details
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {getNodeStatusBadge(node.status)}
-                    <Button size="sm" variant="outline">
-                      <Server className="mr-1 size-3" /> Details
-                    </Button>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Version</div>
-                    <div className="text-sm font-medium">{node.version}</div>
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Version</div>
+                      <div className="text-sm font-medium">{node.version}</div>
+                    </div>
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">CPU</div>
+                      <div className="text-sm font-medium">{node.cpu}</div>
+                    </div>
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Memory</div>
+                      <div className="text-sm font-medium">{node.memory}</div>
+                    </div>
+                    <div className="rounded-lg border p-2">
+                      <div className="text-xs text-muted-foreground">Pods</div>
+                      <div className="text-sm font-medium">{node.pods}</div>
+                    </div>
                   </div>
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">CPU</div>
-                    <div className="text-sm font-medium">{node.cpu}</div>
-                  </div>
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Memory</div>
-                    <div className="text-sm font-medium">{node.memory}</div>
-                  </div>
-                  <div className="rounded-lg border p-2">
-                    <div className="text-xs text-muted-foreground">Pods</div>
-                    <div className="text-sm font-medium">{node.pods}</div>
-                  </div>
-                </div>
 
-                <div className="mt-3 text-xs text-muted-foreground">Age: {node.age}</div>
-              </div>
-            ))}
+                  <div className="mt-3 text-xs text-muted-foreground">Age: {node.age}</div>
+                </div>
+              ))
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>

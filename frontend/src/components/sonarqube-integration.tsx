@@ -57,7 +57,6 @@ export function SonarQubeIntegration() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("projects")
-  const [refreshInterval, setRefreshInterval] = useState(30000) // 30 seconds default
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date())
 
   useEffect(() => {
@@ -65,9 +64,9 @@ export function SonarQubeIntegration() {
       try {
         setLoading(true)
         const data = await getSonarQubeData()
-        setProjects(data.projects)
-        setIssues(data.issues)
-        setQualityGates(data.qualityGates)
+        setProjects(data.projects || [])
+        setIssues(data.issues || [])
+        setQualityGates(data.qualityGates || [])
         setLastRefreshed(new Date())
         setError(null)
       } catch (error) {
@@ -79,17 +78,17 @@ export function SonarQubeIntegration() {
     }
 
     fetchSonarQubeData()
-    const interval = setInterval(fetchSonarQubeData, refreshInterval)
+    const interval = setInterval(fetchSonarQubeData, 30000)
     return () => clearInterval(interval)
-  }, [refreshInterval])
+  }, [])
 
   const handleRefresh = async () => {
     try {
       setLoading(true)
       const data = await getSonarQubeData()
-      setProjects(data.projects)
-      setIssues(data.issues)
-      setQualityGates(data.qualityGates)
+      setProjects(data.projects || [])
+      setIssues(data.issues || [])
+      setQualityGates(data.qualityGates || [])
       setLastRefreshed(new Date())
       setError(null)
     } catch (error) {
@@ -199,7 +198,7 @@ export function SonarQubeIntegration() {
     }
   }
 
-  if (loading && projects.length === 0 && issues.length === 0) {
+  if (loading && projects.length === 0 && issues.length === 0 && qualityGates.length === 0) {
     return (
       <Card className="gradient-border bg-card/50 backdrop-blur-sm">
         <CardHeader>
@@ -215,7 +214,7 @@ export function SonarQubeIntegration() {
     )
   }
 
-  if (error && projects.length === 0 && issues.length === 0) {
+  if (error) {
     return (
       <Card className="gradient-border bg-card/50 backdrop-blur-sm">
         <CardHeader>
@@ -228,6 +227,27 @@ export function SonarQubeIntegration() {
             <p className="text-red-500">{error}</p>
             <Button variant="outline" className="mt-4" onClick={handleRefresh}>
               <RefreshCw className="mr-2 size-4" /> Retry Connection
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (projects.length === 0 && issues.length === 0 && qualityGates.length === 0) {
+    return (
+      <Card className="gradient-border bg-card/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>SonarQube Integration</CardTitle>
+          <CardDescription>No SonarQube data available</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border p-4 text-center">
+            <p className="text-muted-foreground">
+              No SonarQube data available. Please check your SonarQube configuration.
+            </p>
+            <Button variant="outline" className="mt-4" onClick={handleRefresh}>
+              <RefreshCw className="mr-2 size-4" /> Refresh
             </Button>
           </div>
         </CardContent>
@@ -258,130 +278,150 @@ export function SonarQubeIntegration() {
           </TabsList>
 
           <TabsContent value="projects" className="space-y-4">
-            {projects.map((project) => (
-              <div key={project.id} className="rounded-lg border p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {getQualityGateIcon(project.metrics.qualityGate)}
-                    <h3 className="text-lg font-semibold">{project.name}</h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getQualityGateBadge(project.metrics.qualityGate)}
-                    <Button size="sm" variant="outline">
-                      <FileCode className="mr-1 size-3" /> View Report
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="mb-4 grid grid-cols-2 gap-4 md:grid-cols-5">
-                  <div className="rounded-lg border p-2 text-center">
-                    <div className="text-xs text-muted-foreground">Bugs</div>
-                    <div className="text-xl font-bold text-red-500">{project.metrics.bugs}</div>
-                  </div>
-                  <div className="rounded-lg border p-2 text-center">
-                    <div className="text-xs text-muted-foreground">Vulnerabilities</div>
-                    <div className="text-xl font-bold text-orange-500">{project.metrics.vulnerabilities}</div>
-                  </div>
-                  <div className="rounded-lg border p-2 text-center">
-                    <div className="text-xs text-muted-foreground">Code Smells</div>
-                    <div className="text-xl font-bold text-blue-500">{project.metrics.codeSmells}</div>
-                  </div>
-                  <div className="rounded-lg border p-2 text-center">
-                    <div className="text-xs text-muted-foreground">Coverage</div>
-                    <div className="text-xl font-bold">{project.metrics.coverage}%</div>
-                  </div>
-                  <div className="rounded-lg border p-2 text-center">
-                    <div className="text-xs text-muted-foreground">Duplications</div>
-                    <div className="text-xl font-bold">{project.metrics.duplications}%</div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Coverage</span>
-                    <span>{project.metrics.coverage}%</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-secondary">
-                    <div
-                      className={`h-full rounded-full ${
-                        project.metrics.coverage >= 80
-                          ? "bg-green-500"
-                          : project.metrics.coverage >= 60
-                            ? "bg-yellow-500"
-                            : "bg-red-500"
-                      }`}
-                      style={{ width: `${project.metrics.coverage}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-3 text-xs text-muted-foreground">
-                  Last analysis: {new Date(project.lastAnalysis).toLocaleString()}
-                </div>
+            {projects.length === 0 ? (
+              <div className="rounded-lg border p-4 text-center">
+                <p className="text-muted-foreground">No projects available</p>
               </div>
-            ))}
+            ) : (
+              projects.map((project) => (
+                <div key={project.id} className="rounded-lg border p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {getQualityGateIcon(project.metrics.qualityGate)}
+                      <h3 className="text-lg font-semibold">{project.name}</h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getQualityGateBadge(project.metrics.qualityGate)}
+                      <Button size="sm" variant="outline">
+                        <FileCode className="mr-1 size-3" /> View Report
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="mb-4 grid grid-cols-2 gap-4 md:grid-cols-5">
+                    <div className="rounded-lg border p-2 text-center">
+                      <div className="text-xs text-muted-foreground">Bugs</div>
+                      <div className="text-xl font-bold text-red-500">{project.metrics.bugs}</div>
+                    </div>
+                    <div className="rounded-lg border p-2 text-center">
+                      <div className="text-xs text-muted-foreground">Vulnerabilities</div>
+                      <div className="text-xl font-bold text-orange-500">{project.metrics.vulnerabilities}</div>
+                    </div>
+                    <div className="rounded-lg border p-2 text-center">
+                      <div className="text-xs text-muted-foreground">Code Smells</div>
+                      <div className="text-xl font-bold text-blue-500">{project.metrics.codeSmells}</div>
+                    </div>
+                    <div className="rounded-lg border p-2 text-center">
+                      <div className="text-xs text-muted-foreground">Coverage</div>
+                      <div className="text-xl font-bold">{project.metrics.coverage}%</div>
+                    </div>
+                    <div className="rounded-lg border p-2 text-center">
+                      <div className="text-xs text-muted-foreground">Duplications</div>
+                      <div className="text-xl font-bold">{project.metrics.duplications}%</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Coverage</span>
+                      <span>{project.metrics.coverage}%</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-secondary">
+                      <div
+                        className={`h-full rounded-full ${
+                          project.metrics.coverage >= 80
+                            ? "bg-green-500"
+                            : project.metrics.coverage >= 60
+                              ? "bg-yellow-500"
+                              : "bg-red-500"
+                        }`}
+                        style={{ width: `${project.metrics.coverage}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-3 text-xs text-muted-foreground">
+                    Last analysis: {new Date(project.lastAnalysis).toLocaleString()}
+                  </div>
+                </div>
+              ))
+            )}
           </TabsContent>
 
           <TabsContent value="issues" className="space-y-4">
-            {issues
-              .filter((issue) => issue.status === "open" || issue.status === "confirmed")
-              .slice(0, 5)
-              .map((issue) => (
-                <div key={issue.id} className="rounded-lg border p-4">
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    {getSeverityBadge(issue.severity)}
-                    {getTypeBadge(issue.type)}
-                    {getStatusBadge(issue.status)}
-                  </div>
-                  <h3 className="mb-2 text-base font-medium">{issue.message}</h3>
-                  <div className="mb-2 text-sm text-muted-foreground">
-                    <span className="font-medium">File:</span> {issue.component}
-                    {issue.line && <span className="ml-2">Line: {issue.line}</span>}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-                    <span>Author: {issue.author}</span>
-                    <span>Created: {new Date(issue.createdAt).toLocaleDateString()}</span>
-                    <span>Effort: {issue.effort}</span>
-                  </div>
-                </div>
-              ))}
-            <Button variant="outline" className="w-full">
-              View All Issues
-            </Button>
-          </TabsContent>
-
-          <TabsContent value="quality-gates" className="space-y-4">
-            {qualityGates.map((gate) => (
-              <div key={gate.name} className="rounded-lg border p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {getQualityGateIcon(gate.status)}
-                    <h3 className="text-lg font-semibold">{gate.name}</h3>
-                  </div>
-                  {getQualityGateBadge(gate.status)}
-                </div>
-
-                <div className="space-y-3">
-                  {gate.conditions.map((condition, index) => (
-                    <div key={index} className="rounded-lg border p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {getQualityGateIcon(condition.status)}
-                          <span className="font-medium">
-                            {condition.metric.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                          </span>
-                        </div>
-                        {getQualityGateBadge(condition.status)}
+            {issues.length === 0 ? (
+              <div className="rounded-lg border p-4 text-center">
+                <p className="text-muted-foreground">No issues available</p>
+              </div>
+            ) : (
+              <>
+                {issues
+                  .filter((issue) => issue.status === "open" || issue.status === "confirmed")
+                  .slice(0, 5)
+                  .map((issue) => (
+                    <div key={issue.id} className="rounded-lg border p-4">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        {getSeverityBadge(issue.severity)}
+                        {getTypeBadge(issue.type)}
+                        {getStatusBadge(issue.status)}
                       </div>
-                      <div className="mt-2 text-sm text-muted-foreground">
-                        {condition.operator === "GREATER_THAN" ? ">" : "<"} {condition.errorThreshold}
-                        {condition.warningThreshold && ` (Warning: ${condition.warningThreshold})`}
+                      <h3 className="mb-2 text-base font-medium">{issue.message}</h3>
+                      <div className="mb-2 text-sm text-muted-foreground">
+                        <span className="font-medium">File:</span> {issue.component}
+                        {issue.line && <span className="ml-2">Line: {issue.line}</span>}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                        <span>Author: {issue.author}</span>
+                        <span>Created: {new Date(issue.createdAt).toLocaleDateString()}</span>
+                        <span>Effort: {issue.effort}</span>
                       </div>
                     </div>
                   ))}
-                </div>
+                <Button variant="outline" className="w-full">
+                  View All Issues
+                </Button>
+              </>
+            )}
+          </TabsContent>
+
+          <TabsContent value="quality-gates" className="space-y-4">
+            {qualityGates.length === 0 ? (
+              <div className="rounded-lg border p-4 text-center">
+                <p className="text-muted-foreground">No quality gates available</p>
               </div>
-            ))}
+            ) : (
+              qualityGates.map((gate) => (
+                <div key={gate.name} className="rounded-lg border p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {getQualityGateIcon(gate.status)}
+                      <h3 className="text-lg font-semibold">{gate.name}</h3>
+                    </div>
+                    {getQualityGateBadge(gate.status)}
+                  </div>
+
+                  <div className="space-y-3">
+                    {gate.conditions.map((condition, index) => (
+                      <div key={index} className="rounded-lg border p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {getQualityGateIcon(condition.status)}
+                            <span className="font-medium">
+                              {condition.metric.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                            </span>
+                          </div>
+                          {getQualityGateBadge(condition.status)}
+                        </div>
+                        <div className="mt-2 text-sm text-muted-foreground">
+                          {condition.operator === "GREATER_THAN" ? ">" : "<"} {condition.errorThreshold}
+                          {condition.warningThreshold && ` (Warning: ${condition.warningThreshold})`}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>

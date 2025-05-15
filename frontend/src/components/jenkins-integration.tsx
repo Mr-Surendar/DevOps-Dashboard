@@ -109,7 +109,7 @@ export function JenkinsIntegration() {
     )
   }
 
-  if (error && pipelines.length === 0) {
+  if (error) {
     return (
       <Card className="gradient-border bg-card/50 backdrop-blur-sm">
         <CardHeader>
@@ -120,7 +120,7 @@ export function JenkinsIntegration() {
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center">
             <AlertTriangle className="mx-auto mb-2 size-8 text-red-500" />
             <p className="text-red-500">{error}</p>
-            <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+            <Button variant="outline" className="mt-4" onClick={() => getJenkinsData()}>
               <RefreshCw className="mr-2 size-4" /> Retry Connection
             </Button>
           </div>
@@ -129,53 +129,26 @@ export function JenkinsIntegration() {
     )
   }
 
-  // Mock data for demonstration
-  const mockPipelines: JenkinsPipeline[] = [
-    {
-      id: "build-123",
-      name: "main-build",
-      status: "success",
-      branch: "main",
-      duration: "2m 34s",
-      timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
-      stages: [
-        { name: "Checkout", status: "success", duration: "5s" },
-        { name: "Build", status: "success", duration: "1m 20s" },
-        { name: "Test", status: "success", duration: "45s" },
-        { name: "Deploy", status: "success", duration: "24s" },
-      ],
-    },
-    {
-      id: "deploy-45",
-      name: "production-deploy",
-      status: "running",
-      branch: "main",
-      duration: "1m 12s",
-      timestamp: new Date(Date.now() - 1000 * 60 * 1).toISOString(),
-      stages: [
-        { name: "Checkout", status: "success", duration: "4s" },
-        { name: "Build", status: "success", duration: "1m 5s" },
-        { name: "Test", status: "running", duration: "3s" },
-        { name: "Deploy", status: "pending", duration: "0s" },
-      ],
-    },
-    {
-      id: "test-67",
-      name: "integration-tests",
-      status: "failed",
-      branch: "feature/auth",
-      duration: "3m 45s",
-      timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-      stages: [
-        { name: "Checkout", status: "success", duration: "6s" },
-        { name: "Build", status: "success", duration: "1m 30s" },
-        { name: "Test", status: "failed", duration: "2m 9s" },
-        { name: "Deploy", status: "aborted", duration: "0s" },
-      ],
-    },
-  ]
-
-  const displayPipelines = pipelines.length > 0 ? pipelines : mockPipelines
+  if (pipelines.length === 0) {
+    return (
+      <Card className="gradient-border bg-card/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>Jenkins Integration</CardTitle>
+          <CardDescription>No Jenkins data available</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border p-4 text-center">
+            <p className="text-muted-foreground">
+              No Jenkins pipelines available. Please check your Jenkins configuration.
+            </p>
+            <Button variant="outline" className="mt-4" onClick={() => getJenkinsData()}>
+              <RefreshCw className="mr-2 size-4" /> Refresh
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card className="gradient-border bg-card/50 backdrop-blur-sm">
@@ -184,7 +157,7 @@ export function JenkinsIntegration() {
           <CardTitle>Jenkins Integration</CardTitle>
           <CardDescription>CI/CD pipeline management</CardDescription>
         </div>
-        <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+        <Button variant="outline" size="sm" onClick={() => getJenkinsData()}>
           <RefreshCw className="mr-2 size-4" /> Refresh
         </Button>
       </CardHeader>
@@ -197,7 +170,7 @@ export function JenkinsIntegration() {
           </TabsList>
 
           <TabsContent value="pipelines" className="space-y-4">
-            {displayPipelines.map((pipeline) => (
+            {pipelines.map((pipeline) => (
               <div key={pipeline.id} className={`rounded-lg border p-4 ${getStatusColor(pipeline.status)}`}>
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">

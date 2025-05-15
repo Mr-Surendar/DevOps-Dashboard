@@ -13,6 +13,7 @@ const kubernetesRoutes = require("./routes/kubernetes.routes")
 const terraformRoutes = require("./routes/terraform.routes")
 const sonarqubeRoutes = require("./routes/sonarqube.routes")
 const metricsRoutes = require("./routes/metrics.routes")
+const devopsRoutes = require("./routes/devops.routes") // Add this line
 const { errorHandler } = require("./middleware/error.middleware")
 const { validateToken } = require("./middleware/auth.middleware")
 
@@ -21,7 +22,7 @@ dotenv.config()
 
 // Initialize express app
 const app = express()
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT || 5000
 
 // Connect to database
 connectDB()
@@ -71,6 +72,7 @@ app.use("/api/kubernetes", validateToken, kubernetesRoutes)
 app.use("/api/terraform", validateToken, terraformRoutes)
 app.use("/api/sonarqube", validateToken, sonarqubeRoutes)
 app.use("/api/metrics", validateToken, metricsRoutes)
+app.use("/api/devops", validateToken, devopsRoutes) // Add this line
 
 // Health check endpoint
 app.get("/health", (req, res) => {
