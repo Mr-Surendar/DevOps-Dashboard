@@ -7,7 +7,13 @@ export async function getSystemMetrics() {
     return response.data.data
   } catch (error) {
     console.error("Failed to fetch system metrics:", error)
-    throw error
+    // Return empty metrics structure instead of throwing
+    return {
+      cpu: { value: 0, trend: "stable", history: [] },
+      memory: { value: 0, trend: "stable", history: [] },
+      disk: { value: 0, trend: "stable", history: [] },
+      temperature: { value: 0, trend: "stable", history: [] },
+    }
   }
 }
 
@@ -18,6 +24,10 @@ export async function getNetworkMetrics() {
     return response.data.data
   } catch (error) {
     console.error("Failed to fetch network metrics:", error)
-    throw error
+    // Return empty metrics structure instead of throwing
+    return {
+      incoming: { value: 0, trend: "stable", history: [] },
+      outgoing: { value: 0, trend: "stable", history: [] },
+    }
   }
 }

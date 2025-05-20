@@ -126,7 +126,7 @@ export function KubernetesIntegration() {
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center">
             <AlertTriangle className="mx-auto mb-2 size-8 text-red-500" />
             <p className="text-red-500">{error}</p>
-            <Button variant="outline" className="mt-4" onClick={() => getKubernetesData()}>
+            <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
               <RefreshCw className="mr-2 size-4" /> Retry Connection
             </Button>
           </div>
@@ -135,19 +135,27 @@ export function KubernetesIntegration() {
     )
   }
 
-  if (pods.length === 0 && deployments.length === 0 && nodes.length === 0) {
+  // No Kubernetes data available
+  if (!loading && pods.length === 0 && deployments.length === 0 && nodes.length === 0) {
     return (
       <Card className="gradient-border bg-card/50 backdrop-blur-sm">
         <CardHeader>
           <CardTitle>Kubernetes Integration</CardTitle>
-          <CardDescription>No Kubernetes data available</CardDescription>
+          <CardDescription>Configure Kubernetes Integration</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border p-4 text-center">
-            <p className="text-muted-foreground">
-              No Kubernetes resources available. Please check your Kubernetes configuration.
+            <p className="text-muted-foreground mb-4">
+              No Kubernetes resources available. Please configure your Kubernetes integration in the server environment.
             </p>
-            <Button variant="outline" className="mt-4" onClick={() => getKubernetesData()}>
+            <div className="text-left mb-4 p-4 bg-muted rounded-md">
+              <p className="font-mono text-sm mb-2">Required environment variables:</p>
+              <ul className="list-disc pl-5 font-mono text-xs space-y-1">
+                <li>KUBERNETES_API_URL</li>
+                <li>KUBERNETES_TOKEN</li>
+              </ul>
+            </div>
+            <Button variant="outline" onClick={() => window.location.reload()}>
               <RefreshCw className="mr-2 size-4" /> Refresh
             </Button>
           </div>

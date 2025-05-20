@@ -117,7 +117,7 @@ export function GithubIntegration() {
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center">
             <AlertTriangle className="mx-auto mb-2 size-8 text-red-500" />
             <p className="text-red-500">{error}</p>
-            <Button variant="outline" className="mt-4" onClick={() => getGithubData()}>
+            <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
               <RefreshCw className="mr-2 size-4" /> Retry Connection
             </Button>
           </div>
@@ -126,19 +126,28 @@ export function GithubIntegration() {
     )
   }
 
-  if (pullRequests.length === 0 && repositories.length === 0) {
+  // No GitHub data available
+  if (!loading && pullRequests.length === 0 && repositories.length === 0) {
     return (
       <Card className="gradient-border bg-card/50 backdrop-blur-sm">
         <CardHeader>
           <CardTitle>GitHub Integration</CardTitle>
-          <CardDescription>No GitHub data available</CardDescription>
+          <CardDescription>Configure GitHub Integration</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border p-4 text-center">
-            <p className="text-muted-foreground">
-              No GitHub data available. Please check your GitHub configuration and credentials.
+            <p className="text-muted-foreground mb-4">
+              No GitHub data available. Please configure your GitHub integration in the server environment.
             </p>
-            <Button variant="outline" className="mt-4" onClick={() => getGithubData()}>
+            <div className="text-left mb-4 p-4 bg-muted rounded-md">
+              <p className="font-mono text-sm mb-2">Required environment variables:</p>
+              <ul className="list-disc pl-5 font-mono text-xs space-y-1">
+                <li>GITHUB_TOKEN</li>
+                <li>GITHUB_OWNER</li>
+                <li>GITHUB_REPOS</li>
+              </ul>
+            </div>
+            <Button variant="outline" onClick={() => window.location.reload()}>
               <RefreshCw className="mr-2 size-4" /> Refresh
             </Button>
           </div>

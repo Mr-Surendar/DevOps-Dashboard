@@ -79,7 +79,7 @@ export function SystemMetrics() {
     return "bg-red-500"
   }
 
-  if (loading && Object.values(metrics).every((metric) => metric.value === 0)) {
+  if (loading) {
     return (
       <>
         <MetricCardSkeleton title="CPU Usage" icon={<Cpu className="size-5" />} />

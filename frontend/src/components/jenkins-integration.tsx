@@ -120,7 +120,7 @@ export function JenkinsIntegration() {
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center">
             <AlertTriangle className="mx-auto mb-2 size-8 text-red-500" />
             <p className="text-red-500">{error}</p>
-            <Button variant="outline" className="mt-4" onClick={() => getJenkinsData()}>
+            <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
               <RefreshCw className="mr-2 size-4" /> Retry Connection
             </Button>
           </div>
@@ -129,19 +129,28 @@ export function JenkinsIntegration() {
     )
   }
 
-  if (pipelines.length === 0) {
+  // No pipelines data available
+  if (!loading && pipelines.length === 0) {
     return (
       <Card className="gradient-border bg-card/50 backdrop-blur-sm">
         <CardHeader>
           <CardTitle>Jenkins Integration</CardTitle>
-          <CardDescription>No Jenkins data available</CardDescription>
+          <CardDescription>Configure Jenkins Integration</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border p-4 text-center">
-            <p className="text-muted-foreground">
-              No Jenkins pipelines available. Please check your Jenkins configuration.
+            <p className="text-muted-foreground mb-4">
+              No Jenkins pipelines available. Please configure your Jenkins integration in the server environment.
             </p>
-            <Button variant="outline" className="mt-4" onClick={() => getJenkinsData()}>
+            <div className="text-left mb-4 p-4 bg-muted rounded-md">
+              <p className="font-mono text-sm mb-2">Required environment variables:</p>
+              <ul className="list-disc pl-5 font-mono text-xs space-y-1">
+                <li>JENKINS_URL</li>
+                <li>JENKINS_USERNAME</li>
+                <li>JENKINS_API_TOKEN</li>
+              </ul>
+            </div>
+            <Button variant="outline" onClick={() => window.location.reload()}>
               <RefreshCw className="mr-2 size-4" /> Refresh
             </Button>
           </div>
@@ -149,7 +158,6 @@ export function JenkinsIntegration() {
       </Card>
     )
   }
-
   return (
     <Card className="gradient-border bg-card/50 backdrop-blur-sm">
       <CardHeader className="flex flex-row items-center justify-between">

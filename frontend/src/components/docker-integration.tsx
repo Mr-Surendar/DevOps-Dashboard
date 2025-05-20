@@ -119,7 +119,7 @@ export function DockerIntegration() {
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center">
             <AlertTriangle className="mx-auto mb-2 size-8 text-red-500" />
             <p className="text-red-500">{error}</p>
-            <Button variant="outline" className="mt-4" onClick={() => getDockerData()}>
+            <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
               <RefreshCw className="mr-2 size-4" /> Retry Connection
             </Button>
           </div>
@@ -128,19 +128,28 @@ export function DockerIntegration() {
     )
   }
 
-  if (containers.length === 0 && images.length === 0) {
+  // No Docker data available
+  if (!loading && containers.length === 0 && images.length === 0) {
     return (
       <Card className="gradient-border bg-card/50 backdrop-blur-sm">
         <CardHeader>
           <CardTitle>Docker Integration</CardTitle>
-          <CardDescription>No Docker data available</CardDescription>
+          <CardDescription>Configure Docker Integration</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border p-4 text-center">
-            <p className="text-muted-foreground">
-              No Docker containers or images available. Please check your Docker configuration.
+            <p className="text-muted-foreground mb-4">
+              No Docker containers or images available. Please configure your Docker integration in the server
+              environment.
             </p>
-            <Button variant="outline" className="mt-4" onClick={() => getDockerData()}>
+            <div className="text-left mb-4 p-4 bg-muted rounded-md">
+              <p className="font-mono text-sm mb-2">Required environment variables:</p>
+              <ul className="list-disc pl-5 font-mono text-xs space-y-1">
+                <li>DOCKER_HOST</li>
+                <li>DOCKER_API_VERSION</li>
+              </ul>
+            </div>
+            <Button variant="outline" onClick={() => window.location.reload()}>
               <RefreshCw className="mr-2 size-4" /> Refresh
             </Button>
           </div>

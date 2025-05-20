@@ -145,7 +145,7 @@ export function TerraformIntegration() {
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center">
             <AlertTriangle className="mx-auto mb-2 size-8 text-red-500" />
             <p className="text-red-500">{error}</p>
-            <Button variant="outline" className="mt-4" onClick={() => getTerraformData()}>
+            <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
               <RefreshCw className="mr-2 size-4" /> Retry Connection
             </Button>
           </div>
@@ -154,19 +154,27 @@ export function TerraformIntegration() {
     )
   }
 
-  if (resources.length === 0 && modules.length === 0 && workspaces.length === 0) {
+  // No Terraform data available
+  if (!loading && resources.length === 0 && modules.length === 0 && workspaces.length === 0) {
     return (
       <Card className="gradient-border bg-card/50 backdrop-blur-sm">
         <CardHeader>
           <CardTitle>Terraform Integration</CardTitle>
-          <CardDescription>No Terraform data available</CardDescription>
+          <CardDescription>Configure Terraform Integration</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border p-4 text-center">
-            <p className="text-muted-foreground">
-              No Terraform resources available. Please check your Terraform configuration.
+            <p className="text-muted-foreground mb-4">
+              No Terraform resources available. Please configure your Terraform integration in the server environment.
             </p>
-            <Button variant="outline" className="mt-4" onClick={() => getTerraformData()}>
+            <div className="text-left mb-4 p-4 bg-muted rounded-md">
+              <p className="font-mono text-sm mb-2">Required environment variables:</p>
+              <ul className="list-disc pl-5 font-mono text-xs space-y-1">
+                <li>TERRAFORM_CLOUD_TOKEN</li>
+                <li>TERRAFORM_ORGANIZATION</li>
+              </ul>
+            </div>
+            <Button variant="outline" onClick={() => window.location.reload()}>
               <RefreshCw className="mr-2 size-4" /> Refresh
             </Button>
           </div>

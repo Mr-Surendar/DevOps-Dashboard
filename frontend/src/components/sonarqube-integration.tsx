@@ -225,7 +225,7 @@ export function SonarQubeIntegration() {
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center">
             <AlertTriangle className="mx-auto mb-2 size-8 text-red-500" />
             <p className="text-red-500">{error}</p>
-            <Button variant="outline" className="mt-4" onClick={handleRefresh}>
+            <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
               <RefreshCw className="mr-2 size-4" /> Retry Connection
             </Button>
           </div>
@@ -234,19 +234,27 @@ export function SonarQubeIntegration() {
     )
   }
 
-  if (projects.length === 0 && issues.length === 0 && qualityGates.length === 0) {
+  // No SonarQube data available
+  if (!loading && projects.length === 0 && issues.length === 0 && qualityGates.length === 0) {
     return (
       <Card className="gradient-border bg-card/50 backdrop-blur-sm">
         <CardHeader>
           <CardTitle>SonarQube Integration</CardTitle>
-          <CardDescription>No SonarQube data available</CardDescription>
+          <CardDescription>Configure SonarQube Integration</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border p-4 text-center">
-            <p className="text-muted-foreground">
-              No SonarQube data available. Please check your SonarQube configuration.
+            <p className="text-muted-foreground mb-4">
+              No SonarQube data available. Please configure your SonarQube integration in the server environment.
             </p>
-            <Button variant="outline" className="mt-4" onClick={handleRefresh}>
+            <div className="text-left mb-4 p-4 bg-muted rounded-md">
+              <p className="font-mono text-sm mb-2">Required environment variables:</p>
+              <ul className="list-disc pl-5 font-mono text-xs space-y-1">
+                <li>SONARQUBE_URL</li>
+                <li>SONARQUBE_TOKEN</li>
+              </ul>
+            </div>
+            <Button variant="outline" onClick={() => window.location.reload()}>
               <RefreshCw className="mr-2 size-4" /> Refresh
             </Button>
           </div>
