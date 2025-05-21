@@ -55,15 +55,12 @@ pipeline {
 
         stage('OWASP Dependency-Check Scan') {
             steps {
-                script {
-                 dir('frontend') {
+                dir('frontend') {
                     dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
                     dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                }
             }
         }
-    }
-}
-
 
         stage('Trivy File Scan') {
             steps {
@@ -73,18 +70,17 @@ pipeline {
             }
         }
 
-
-       stage('Docker Image Build') {
-    steps {
-        dir('frontend') {
-            sh '''
-                docker system prune -f
-                docker container prune -f
-                docker build -t ${AWS_ECR_REPO_NAME} -f Dockerfile.frontend "."
-            '''
+        stage('Docker Image Build') {
+            steps {
+                dir('frontend') {
+                    sh '''
+                        docker system prune -f
+                        docker container prune -f
+                        docker build -t ${AWS_ECR_REPO_NAME} -f Dockerfile.frontend .
+                    '''
+                }
+            }
         }
-    }
-}
 
         stage('Push Image to ECR') {
             steps {
@@ -110,44 +106,40 @@ pipeline {
                 GIT_USER_NAME = 'Mr-Surendar'
             }
             steps {
-               dir('Kubernetes-Manifests-file/Frontend') {
-    withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-        sh '''
-            git config user.email "preepsurendar874@gmail.com"
-            git config user.name "Mr-Surendar"
+                dir('Kubernetes-Manifests-file/Frontend') {
+                    withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+                        sh '''
+                            git config user.email "preepsurendar874@gmail.com"
+                            git config user.name "Mr-Surendar"
 
-            ECR_FULL_REPO="5fe84410a39c.dkr.ecr.us-east-1.amazonaws.com/frontend"
+                            ECR_FULL_REPO="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/frontend"
+                            newTag="${BUILD_NUMBER}"
 
-            # --- CORRECTED LINE FOR oldTag EXTRACTION ---
-            oldTag=$(grep "image: ${ECR_FULL_REPO}:" deployment.yaml | sed -E 's/.*:([0-9]+)$/\\1/')
-            # --- END CORRECTED LINE ---
+                            echo "Searching for image line in deployment.yaml..."
+                            oldTag=$(grep "image: ${ECR_FULL_REPO}:" deployment.yaml | sed -E 's/.*:([0-9]+)$/\\1/')
 
-            newTag="${BUILD_NUMBER}"
+                            if [ -z "$oldTag" ]; then
+                                echo "ERROR: Could not find the current image tag in deployment.yaml."
+                                echo "Ensure the line follows: image: ${ECR_FULL_REPO}:[number]"
+                                exit 1
+                            fi
 
-            if [ -z "$oldTag" ]; then
-                echo "ERROR: Could not find the current image tag (like ':3') after 'frontend:' in deployment.yaml."
-                echo "Please ensure the image line in deployment.yaml is correct: 'image: ${ECR_FULL_REPO}:[number]'"
-                exit 1
-            fi
+                            echo "Old tag detected: $oldTag"
+                            echo "Replacing with new tag: $newTag"
 
-            echo "Detected old image tag: ${oldTag}"
-            echo "New image tag will be: ${newTag} (from Jenkins BUILD_NUMBER)"
+                            sed -i "s|${ECR_FULL_REPO}:${oldTag}|${ECR_FULL_REPO}:${newTag}|" deployment.yaml
 
-            sed -i "s|${ECR_FULL_REPO}:${oldTag}|${ECR_FULL_REPO}:${newTag}|" deployment.yaml
-
-            if git diff --exit-code deployment.yaml; then
-                echo "deployment.yaml was NOT modified by sed. The tag might already be ${newTag}."
-            else
-                echo "deployment.yaml WAS successfully updated. Proceeding with Git commit and push."
-                
-                git add deployment.yaml
-                git commit -m "Update frontend image to version ${newTag}" || true
-                
-                git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
-            fi
-        '''
-    }
-}
+                            if git diff --exit-code deployment.yaml; then
+                                echo "No changes in deployment.yaml. Skipping commit."
+                            else
+                                echo "Updated deployment.yaml. Committing..."
+                                git add deployment.yaml
+                                git commit -m "Update frontend image to version ${newTag}" || true
+                                git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+                            fi
+                        '''
+                    }
+                }
             }
         }
     }
