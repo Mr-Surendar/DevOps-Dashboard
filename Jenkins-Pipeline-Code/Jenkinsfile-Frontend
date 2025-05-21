@@ -76,11 +76,11 @@ pipeline {
 
        stage('Docker Image Build') {
     steps {
-        dir('frontend') { 
+        dir('frontend') {
             sh '''
                 docker system prune -f
                 docker container prune -f
-                docker build -t ${AWS_ECR_REPO_NAME} -f Dockerfile.frontend .  
+                docker build -t ${AWS_ECR_REPO_NAME} -f Dockerfile.frontend "."
             '''
         }
     }
