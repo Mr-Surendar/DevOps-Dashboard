@@ -14,7 +14,7 @@ pipeline {
         AWS_ACCOUNT_ID = credentials('ACCOUNT_ID')
         AWS_ECR_REPO_NAME = credentials('ECR_REPO1')
         AWS_DEFAULT_REGION = 'us-east-1'
-        REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+        REPOSITORY_URI = credentials('REPOSITORY_URI')
     }
 
     stages {
@@ -106,9 +106,13 @@ pipeline {
             }
             steps {
                 dir('Kubernetes-Manifests-file/Frontend') {
-                    withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+                    withCredentials([
+                        string(credentialsId: 'github', variable: 'GITHUB_TOKEN'),
+                        string(credentialsId: 'ACCOUNT_ID', variable: 'AWS_ACCOUNT_ID'),
+                        string(credentialsId: 'ECR_REPO1', variable: 'AWS_ECR_REPO_NAME')
+                    ]) {
                         catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-                            sh """
+                            sh '''
                                 git config --global user.email "preepsurendar874@gmail.com"
                                 git config --global user.name "Mr-Surendar"
 
@@ -116,26 +120,26 @@ pipeline {
                                 newTag="${BUILD_NUMBER}"
 
                                 echo "🔍 Searching for current tag in deployment.yaml..."
-                                oldTag=\$(grep "image: \$ECR_FULL_REPO:" deployment.yaml | sed -E 's/.*:([0-9]+)\$/\\1/')
+                                oldTag=$(grep "image: $ECR_FULL_REPO:" deployment.yaml | sed -E 's/.*:([0-9]+)$/\\1/')
 
-                                if [ -z "\$oldTag" ]; then
+                                if [ -z "$oldTag" ]; then
                                     echo "❌ Could not find current image tag in deployment.yaml. Aborting."
                                     exit 1
                                 fi
 
-                                if [ "\$oldTag" = "\$newTag" ]; then
-                                    echo "✅ Tag is already up-to-date (\$newTag). Skipping update."
+                                if [ "$oldTag" = "$newTag" ]; then
+                                    echo "✅ Tag is already up-to-date ($newTag). Skipping update."
                                     exit 0
                                 fi
 
-                                echo "📝 Updating image tag from \$oldTag to \$newTag..."
-                                sed -i "s|\$ECR_FULL_REPO:\$oldTag|\$ECR_FULL_REPO:\$newTag|" deployment.yaml
+                                echo "📝 Updating image tag from $oldTag to $newTag..."
+                                sed -i "s|$ECR_FULL_REPO:$oldTag|$ECR_FULL_REPO:$newTag|" deployment.yaml
 
                                 echo "📦 Committing and pushing the changes..."
                                 git add deployment.yaml
-                                git commit -m "Update frontend image to version \$newTag" || echo "Nothing to commit"
-                                git push https://\${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
-                            """
+                                git commit -m "Update frontend image to version $newTag" || echo "Nothing to commit"
+                                git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
+                            '''
                         }
                     }
                 }
