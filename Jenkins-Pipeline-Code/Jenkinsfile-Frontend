@@ -110,7 +110,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
                             sh """
                                 git config --global user.email "preepsurendar874@gmail.com"
-                                git config --global user.name "${GIT_USER_NAME}"
+                                git config --global user.name "Mr-Surendar"
 
                                 ECR_FULL_REPO="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${AWS_ECR_REPO_NAME}"
                                 newTag="${BUILD_NUMBER}"
