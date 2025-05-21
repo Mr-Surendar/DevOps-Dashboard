@@ -93,7 +93,7 @@ export function DashboardSidebar() {
             DevOps
           </span>
         </div>
-        <SidebarTrigger className={`${isCollapsed ? "absolute right-2 top-4" : "absolute right-2 top-4"}`} />
+        <SidebarTrigger className="absolute right-2 top-4"/>
       </SidebarHeader>
       <SidebarContent className="bg-transparent p-0">
         <SidebarMenu className="gap-0">
