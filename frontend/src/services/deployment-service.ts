@@ -32,16 +32,24 @@ export async function getRecentDeployments(): Promise<Deployment[]> {
       ]
 
       const deployments: Deployment[] = Array.from({ length: 4 }, (_, i) => {
+        // NOSONAR: Using Math.random() for non-security-critical mock data generation
         const environment = environments[Math.floor(Math.random() * environments.length)]
+        // NOSONAR: Using Math.random() for non-security-critical mock data generation
         const status = statuses[Math.floor(Math.random() * statuses.length)]
+        // NOSONAR: Using Math.random() for non-security-critical mock data generation
         const deployer = deployers[Math.floor(Math.random() * deployers.length)]
+
+        // NOSONAR: Using Math.random() for non-security-critical mock data generation
+        const version = `v1.${Math.floor(Math.random() * 5)}.${Math.floor(Math.random() * 10)}${environment === "development" ? "-dev" : ""}`
+        // NOSONAR: Using Math.random() for non-security-critical mock data generation
+        const timestamp = new Date(Date.now() - 1000 * 60 * 60 * (Math.floor(Math.random() * 24) + 1)).toISOString()
 
         return {
           id: `deploy-${789 - i}`,
           environment,
           status,
-          version: `v1.${Math.floor(Math.random() * 5)}.${Math.floor(Math.random() * 10)}${environment === "development" ? "-dev" : ""}`,
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * (Math.floor(Math.random() * 24) + 1)).toISOString(),
+          version,
+          timestamp,
           deployer,
         }
       })
