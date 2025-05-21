@@ -124,19 +124,17 @@ pipeline {
                                 exit 1
                             fi
 
-                            echo "Old tag detected: $oldTag"
-                            echo "Replacing with new tag: $newTag"
+                            if [ "$oldTag" = "$newTag" ]; then
+                                echo "Tag is already up-to-date ($newTag). Skipping update."
+                                exit 0
+                            fi
 
+                            echo "Old tag: $oldTag, New tag: $newTag"
                             sed -i "s|${ECR_FULL_REPO}:${oldTag}|${ECR_FULL_REPO}:${newTag}|" deployment.yaml
 
-                            if git diff --quiet deployment.yaml; then
-                                echo "No changes detected in deployment.yaml. Skipping commit."
-                            else
-                                echo "Updating deployment.yaml..."
-                                git add deployment.yaml
-                                git commit -m "Update frontend image to version ${newTag}" || true
-                                git push https://${GITHUB_TOKEN}@github.com/Mr-Surendar/${GIT_REPO_NAME}.git HEAD:main
-                            fi
+                            git add deployment.yaml
+                            git commit -m "Update frontend image to version ${newTag}" || echo "Nothing to commit"
+                            git push https://${GITHUB_TOKEN}@github.com/Mr-Surendar/DevOps-Dashboard HEAD:main
                         '''
                     }
                 }
