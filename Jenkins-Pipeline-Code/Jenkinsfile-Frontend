@@ -107,7 +107,9 @@ pipeline {
             steps {
                 dir('Kubernetes-Manifests-file/Frontend') {
                     withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+                        // The catchError block is removed here.
+                        // We will let the shell script's exit code determine the step's success/failure.
+                        // If 'git commit' or 'git push' fails, it will correctly fail the stage.
                             sh """
                                 git config --global user.email "preepsurendar874@gmail.com"
                                 git config --global user.name "Mr-Surendar"
@@ -116,32 +118,30 @@ pipeline {
                                 newTag="${BUILD_NUMBER}"
 
                                 echo "🔍 Searching for current tag in deployment.yaml..."
-                                # Use `set +e` to prevent script from exiting if grep finds no match (oldTag remains empty)
+                                # Temporarily disable 'exit on error' for grep, as it might return 1 if no match is found
                                 set +e
                                 oldTag=\$(grep "image: \$ECR_FULL_REPO:" deployment.yaml | sed -E 's/.*:([0-9]+)\$/\\1/')
-                                set -e # Re-enable exit on error
+                                set -e # Re-enable 'exit on error'
 
                                 if [ -z "\$oldTag" ]; then
                                     echo "❌ Could not find current image tag in deployment.yaml. Aborting."
-                                    exit 1
-                                fi # Added missing fi for the first if statement
-
-                                if [ "\$oldTag" = "\$newTag" ]; then
+                                    exit 1 # This will cause the 'sh' command and thus the stage to fail.
+                                elif [ "\$oldTag" = "\$newTag" ]; then # Use elif for the second condition
                                     echo "✅ Tag is already up-to-date (\$newTag). Skipping update."
-                                    exit 0
-                                fi # Added missing fi for the second if statement
+                                    # We don't use 'exit 0' or 'return 0' here.
+                                    # The script will simply finish successfully after this echo.
+                                else # Only update if tags are different
+                                    echo "📝 Updating image tag from \$oldTag to \$newTag..."
+                                    # Use double quotes to allow shell variable expansion in sed pattern
+                                    sed -i "s|\${ECR_FULL_REPO}:\$oldTag|\${ECR_FULL_REPO}:\$newTag|" deployment.yaml
 
-                                echo "📝 Updating image tag from \$oldTag to \$newTag..."
-                                # Use double quotes to allow shell variable expansion in sed pattern
-                                sed -i "s|\${ECR_FULL_REPO}:\$oldTag|\${ECR_FULL_REPO}:\$newTag|" deployment.yaml
-
-                                echo "📦 Committing and pushing the changes..."
-                                git add deployment.yaml
-                                # Use || true to prevent the pipeline from failing if there's nothing to commit
-                                git commit -m "Update frontend image to version \$newTag" || true
-                                git push https://\${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
+                                    echo "📦 Committing and pushing the changes..."
+                                    git add deployment.yaml
+                                    # Use '|| true' to prevent pipeline failure if 'git commit' finds nothing to commit
+                                    git commit -m "Update frontend image to version \$newTag" || true
+                                    git push https://\${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
+                                fi
                             """
-                        }
                     }
                 }
             }
