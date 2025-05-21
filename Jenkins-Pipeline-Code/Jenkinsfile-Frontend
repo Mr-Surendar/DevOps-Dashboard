@@ -110,7 +110,7 @@ pipeline {
                 GIT_USER_NAME = 'Mr-Surendar'
             }
             steps {
-                dir('Kubernetes-Manifests-file/Frontend') {
+               dir('Kubernetes-Manifests-file/Frontend') {
     withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
         sh '''
             git config user.email "preepsurendar874@gmail.com"
@@ -118,7 +118,9 @@ pipeline {
 
             ECR_FULL_REPO="5fe84410a39c.dkr.ecr.us-east-1.amazonaws.com/frontend"
 
-            oldTag=$(grep -oP '(?<=frontend:)[0-9]+' deployment.yaml | head -n 1)
+            # --- CORRECTED LINE FOR oldTag EXTRACTION ---
+            oldTag=$(grep "image: ${ECR_FULL_REPO}:" deployment.yaml | sed -E 's/.*:([0-9]+)$/\\1/')
+            # --- END CORRECTED LINE ---
 
             newTag="${BUILD_NUMBER}"
 
@@ -144,8 +146,8 @@ pipeline {
                 git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
             fi
         '''
-                 }
-              }
+    }
+}
             }
         }
     }
