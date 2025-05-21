@@ -26,6 +26,8 @@ jspm_packages/
 # VS Code settings
 .vscode/
 
+frontend/.next
+
 # Docker files
 *.local
 docker-compose.override.yml
