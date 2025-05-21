@@ -13,6 +13,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Add this line to enable standalone output for Docker builds
+  output: 'standalone', // <-- ADD THIS LINE
+
   // Enable CORS for API requests
   async rewrites() {
     return [
