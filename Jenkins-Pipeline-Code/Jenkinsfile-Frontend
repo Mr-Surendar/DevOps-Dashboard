@@ -18,7 +18,8 @@ pipeline {
     }
 
     stages {
-        stage('Cleaning Workspace') {
+
+        stage('Clean Workspace') {
             steps {
                 cleanWs()
             }
@@ -45,7 +46,7 @@ pipeline {
             }
         }
 
-        stage('Quality Gate Check') {
+        stage('Quality Gate') {
             steps {
                 script {
                     waitForQualityGate abortPipeline: true
@@ -53,7 +54,7 @@ pipeline {
             }
         }
 
-        stage('OWASP Dependency-Check Scan') {
+        stage('OWASP Dependency-Check') {
             steps {
                 dir('frontend') {
                     dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
@@ -70,7 +71,7 @@ pipeline {
             }
         }
 
-        stage('Docker Image Build') {
+        stage('Docker Build') {
             steps {
                 dir('frontend') {
                     sh '''
@@ -82,7 +83,7 @@ pipeline {
             }
         }
 
-        stage('Push Image to ECR') {
+        stage('Push to ECR') {
             steps {
                 script {
                     sh '''
@@ -100,7 +101,7 @@ pipeline {
             }
         }
 
-        stage('Update Deployment File and Push') {
+        stage('Update deployment.yaml and Push') {
             environment {
                 GIT_REPO_NAME = 'DevOps-Dashboard'
                 GIT_USER_NAME = 'Mr-Surendar'
@@ -119,8 +120,7 @@ pipeline {
                             oldTag=$(grep "image: ${ECR_FULL_REPO}:" deployment.yaml | sed -E 's/.*:([0-9]+)$/\\1/')
 
                             if [ -z "$oldTag" ]; then
-                                echo "ERROR: Could not find the current image tag in deployment.yaml."
-                                echo "Ensure the line follows: image: ${ECR_FULL_REPO}:[number]"
+                                echo "ERROR: Could not find current image tag in deployment.yaml."
                                 exit 1
                             fi
 
@@ -129,10 +129,11 @@ pipeline {
 
                             sed -i "s|${ECR_FULL_REPO}:${oldTag}|${ECR_FULL_REPO}:${newTag}|" deployment.yaml
 
-                            if git diff --exit-code deployment.yaml; then
-                                echo "No changes in deployment.yaml. Skipping commit."
+                            if git diff --quiet deployment.yaml; then
+                                echo "No changes detected in deployment.yaml. Skipping commit."
+                                exit 0
                             else
-                                echo "Updated deployment.yaml. Committing..."
+                                echo "Updating deployment.yaml..."
                                 git add deployment.yaml
                                 git commit -m "Update frontend image to version ${newTag}" || true
                                 git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
