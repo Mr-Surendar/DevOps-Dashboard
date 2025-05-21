@@ -1,6 +1,10 @@
 # Build stage
 FROM node:18-alpine AS builder
 
+# Install Python and build tools for native modules (Node-Gyp)
+# These are necessary for dependencies like 'diskusage' to compile
+RUN apk add --no-cache python3 make g++
+
 # Set working directory
 WORKDIR /app
 
@@ -8,7 +12,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install dependencies
-RUN npm ci --force
+RUN npm ci --force # Keep --force for now, or remove if you resolve conflicts cleanly
 
 # Copy all files
 COPY . .
