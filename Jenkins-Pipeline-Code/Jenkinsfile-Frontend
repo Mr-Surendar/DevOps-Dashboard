@@ -125,8 +125,7 @@ pipeline {
                                 if [ "\$oldTag" = "\$newTag" ]; then
                                     echo "✅ Tag is already up-to-date (\$newTag). Skipping update."
                                     exit 0
-                                fi
-
+                                if
                                 echo "📝 Updating image tag from \$oldTag to \$newTag..."
                                 sed -i "s|\$ECR_FULL_REPO:\$oldTag|\$ECR_FULL_REPO:\$newTag|" deployment.yaml
 
