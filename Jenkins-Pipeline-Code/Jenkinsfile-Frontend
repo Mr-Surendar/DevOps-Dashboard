@@ -136,7 +136,7 @@ pipeline {
                                 echo "Updating deployment.yaml..."
                                 git add deployment.yaml
                                 git commit -m "Update frontend image to version ${newTag}" || true
-                                git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+                                git push https://${GITHUB_TOKEN}@github.com/Mr-Surendar/DevOps-Dashboard HEAD:main
                             fi
                         '''
                     }
