@@ -110,8 +110,8 @@ pipeline {
                 dir('Kubernetes-Manifests-file/Frontend') {
                     withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
                         sh '''
-                            git config user.email "preepsurendar874@gmail.com"
-                            git config user.name "Mr-Surendar"
+                            git config --global user.email "preepsurendar874@gmail.com"
+                            git config --global user.name "Mr-Surendar"
 
                             ECR_FULL_REPO="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/frontend"
                             newTag="${BUILD_NUMBER}"
@@ -131,12 +131,11 @@ pipeline {
 
                             if git diff --quiet deployment.yaml; then
                                 echo "No changes detected in deployment.yaml. Skipping commit."
-                                exit 0
                             else
                                 echo "Updating deployment.yaml..."
                                 git add deployment.yaml
                                 git commit -m "Update frontend image to version ${newTag}" || true
-                                git push https://${GITHUB_TOKEN}@github.com/Mr-Surendar/DevOps-Dashboard HEAD:main
+                                git push https://${GITHUB_TOKEN}@github.com/Mr-Surendar/${GIT_REPO_NAME}.git HEAD:main
                             fi
                         '''
                     }
