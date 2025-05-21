@@ -111,20 +111,41 @@ pipeline {
             }
             steps {
                 dir('Kubernetes-Manifests-file/Frontend') {
-                    withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-                        sh '''
-                            git config user.email "preepsurendar874@gmail.com"
-                            git config user.name "Mr-Surendar"
+    withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+        sh '''
+            git config user.email "preepsurendar874@gmail.com"
+            git config user.name "Mr-Surendar"
 
-                            currentTag=$(grep -oP '(?<=frontend:)[^ ]+' deployment.yaml)
-                            sed -i "s|${AWS_ECR_REPO_NAME}:${currentTag}|${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}|" deployment.yaml
+            ECR_FULL_REPO="5fe84410a39c.dkr.ecr.us-east-1.amazonaws.com/frontend"
 
-                            git add deployment.yaml
-                            git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-                            git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:master
-                        '''
-                    }
-                }
+            oldTag=$(grep -oP '(?<=frontend:)[0-9]+' deployment.yaml | head -n 1)
+
+            newTag="${BUILD_NUMBER}"
+
+            if [ -z "$oldTag" ]; then
+                echo "ERROR: Could not find the current image tag (like ':3') after 'frontend:' in deployment.yaml."
+                echo "Please ensure the image line in deployment.yaml is correct: 'image: ${ECR_FULL_REPO}:[number]'"
+                exit 1
+            fi
+
+            echo "Detected old image tag: ${oldTag}"
+            echo "New image tag will be: ${newTag} (from Jenkins BUILD_NUMBER)"
+
+            sed -i "s|${ECR_FULL_REPO}:${oldTag}|${ECR_FULL_REPO}:${newTag}|" deployment.yaml
+
+            if git diff --exit-code deployment.yaml; then
+                echo "deployment.yaml was NOT modified by sed. The tag might already be ${newTag}."
+            else
+                echo "deployment.yaml WAS successfully updated. Proceeding with Git commit and push."
+                
+                git add deployment.yaml
+                git commit -m "Update frontend image to version ${newTag}" || true
+                
+                git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+            fi
+        '''
+                 }
+              }
             }
         }
     }
