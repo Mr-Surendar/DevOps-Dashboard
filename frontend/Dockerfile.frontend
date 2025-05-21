@@ -32,8 +32,10 @@ ENV NODE_ENV production
 RUN addgroup --system --gid 1001 nodejs \
     && adduser --system --uid 1001 nextjs
 
-# Copy only necessary files from the build stage
-COPY --from=builder /app/public ./public
+# Copy only necessary files from the build stage for standalone output
+# Remove the public directory copy, as it should be part of standalone or handled differently by Next.js
+# COPY --from=builder /app/public ./public  <-- REMOVE OR COMMENT THIS LINE
+
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
