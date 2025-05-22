@@ -50,7 +50,7 @@ spec:
           - name: PORT  # Added: Most Node.js apps expect PORT env var
             value: "3500"
         ports:
-        - containerPort: 3001
+        - containerPort: 3500
         # Removed health check probes - they'll cause failures if your app doesn't have these endpoints
         # Add them back only if your backend actually implements /healthz, /ready, /started endpoints
 ---
@@ -68,6 +68,6 @@ spec:
   ports:
   - name: http
     port: 80
-    targetPort: 3001
+    targetPort: 3500
     protocol: TCP
   type: LoadBalancer
