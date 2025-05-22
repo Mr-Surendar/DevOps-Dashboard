@@ -36,7 +36,7 @@ spec:
             memory: "512Mi"
         env:
           - name: MONGO_CONN_STR
-            value: mongodb://mongodb-svc:27017/todo?directConnection=true
+            value: mongodb://localhost:27017/devops-dashboard?directConnection=true
           - name: MONGO_USERNAME
             valueFrom:
               secretKeyRef:
