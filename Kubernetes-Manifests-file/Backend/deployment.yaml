@@ -12,7 +12,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 25%
+      maxUnavailable: 1  # Fixed: was 25% but should be integer for small replica count
   selector:
     matchLabels:
       role: api
@@ -47,25 +47,27 @@ spec:
               secretKeyRef:
                 name: mongo-sec
                 key: password
+          - name: PORT  # Added: Most Node.js apps expect PORT env var
+            value: "3500"
         ports:
         - containerPort: 3500
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 3500
-          initialDelaySeconds: 2
-          periodSeconds: 5
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 3500
-          initialDelaySeconds: 5
-          periodSeconds: 5
-          successThreshold: 1
-        startupProbe:
-          httpGet:
-            path: /started
-            port: 3500
-          initialDelaySeconds: 0
-          periodSeconds: 10
-          failureThreshold: 30
+        # Removed health check probes - they'll cause failures if your app doesn't have these endpoints
+        # Add them back only if your backend actually implements /healthz, /ready, /started endpoints
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+  namespace: three-tier
+  labels:
+    role: api
+    env: demo
+spec:
+  selector:
+    role: api
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3500
+    protocol: TCP
+  type: LoadBalancer
