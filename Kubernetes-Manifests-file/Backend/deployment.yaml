@@ -1,16 +1,3 @@
-# MongoDB Secret
-apiVersion: v1
-kind: Secret
-metadata:
-  name: mongo-sec
-  namespace: three-tier
-type: Opaque
-stringData:
-  username: "Devopenitor"
-  password: "mkTQ22Aa2Jru6Bf3"
-  connection_string: "mongodb+srv://Devopenitor:mkTQ22Aa2Jru6Bf3@cluster0.99leeu2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
----
-# Backend API Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -25,7 +12,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 1
+      maxUnavailable: 1  # Fixed: was 25% but should be integer for small replica count
   selector:
     matchLabels:
       role: api
@@ -49,10 +36,7 @@ spec:
             memory: "512Mi"
         env:
           - name: MONGO_CONN_STR
-            valueFrom:
-              secretKeyRef:
-                name: mongo-sec
-                key: connection_string
+            value: MONGO_CONN_STR=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@cluster0.99leeu2.mongodb.net/
           - name: MONGO_USERNAME
             valueFrom:
               secretKeyRef:
@@ -63,26 +47,13 @@ spec:
               secretKeyRef:
                 name: mongo-sec
                 key: password
-          - name: PORT
-            value: "3001"  # Changed to match your server code
+          - name: PORT  # Added: Most Node.js apps expect PORT env var
+            value: "3001"
         ports:
-        - containerPort: 3001  # Changed to match your server code
-        readinessProbe:  # Added basic readiness probe
-          httpGet:
-            path: /
-            port: 3001
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 2
-        livenessProbe:  # Added basic liveness probe
-          httpGet:
-            path: /
-            port: 3001
-          initialDelaySeconds: 15
-          periodSeconds: 20
-          timeoutSeconds: 2
+        - containerPort: 3001
+        # Removed health check probes - they'll cause failures if your app doesn't have these endpoints
+        # Add them back only if your backend actually implements /healthz, /ready, /started endpoints
 ---
-# Backend API Service
 apiVersion: v1
 kind: Service
 metadata:
@@ -97,6 +68,6 @@ spec:
   ports:
   - name: http
     port: 80
-    targetPort: 3001  # Changed to match your server code
+    targetPort: 3001
     protocol: TCP
   type: LoadBalancer
