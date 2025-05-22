@@ -11,7 +11,7 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
-    - host: devopinator.site
+    - host: devopinator.sbs
       http:
         paths:
           - path: /api
@@ -20,28 +20,28 @@ spec:
               service:
                 name: api
                 port:
-                  number: 3500
+                  number: 3001
           - path: /healthz
             pathType: Exact
             backend:
               service:
                 name: api
                 port:
-                  number: 3500
+                  number: 3001
           - path: /ready
             pathType: Exact
             backend:
               service:
                 name: api
                 port:
-                  number: 3500
+                  number: 3001
           - path: /started
             pathType: Exact
             backend:
               service:
                 name: api
                 port:
-                  number: 3500
+                  number: 3001
           - path: /
             pathType: Prefix
             backend:
