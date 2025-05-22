@@ -17,9 +17,8 @@ RUN npm ci --force # Keep --force for now, or remove if you resolve conflicts cl
 COPY . .
 
 # TypeScript compilation (if not already handled by server.js)
-# Only run tsc if it exists in node_modules/.bin and there's no server.js in the root
 RUN if [ ! -f "server.js" ] && [ -f "node_modules/.bin/tsc" ]; then \
-        echo "Compiling TypeScript..."; \
+        echo "Compiling TypeScript..." && \
         ./node_modules/.bin/tsc; \
     else \
         echo "Using existing server.js or no TypeScript compiler found"; \
@@ -46,19 +45,19 @@ RUN npm ci --production --force && npm cache clean --force
 # Copy server.js (main entry point)
 COPY --from=builder /app/server.js ./server.js
 
-# Copy compiled JavaScript files if they exist
-COPY --from=builder /app/dist ./dist 2>/dev/null || echo "No dist directory found"
-COPY --from=builder /app/build ./build 2>/dev/null || echo "No build directory found"
-
-# Copy necessary directories
-COPY --from=builder /app/controllers ./controllers 2>/dev/null || echo "No controllers directory found"
-COPY --from=builder /app/middleware ./middleware 2>/dev/null || echo "No middleware directory found"
-COPY --from=builder /app/routes ./routes 2>/dev/null || echo "No routes directory found"
-COPY --from=builder /app/utils ./utils 2>/dev/null || echo "No utils directory found"
-COPY --from=builder /app/config ./config 2>/dev/null || echo "No config directory found"
-
-# Copy any compiled JS files in the root (from TypeScript compilation)
+# Copy compiled JavaScript files and directories if they exist
+# Use separate RUN commands with shell conditionals instead of inline conditionals in COPY
 COPY --from=builder /app/*.js ./
+
+# Create a script to copy directories if they exist
+RUN mkdir -p controllers middleware routes utils config
+
+# Copy necessary directories with proper error handling
+COPY --from=builder /app/controllers/. ./controllers/ 2>/dev/null || true
+COPY --from=builder /app/middleware/. ./middleware/ 2>/dev/null || true
+COPY --from=builder /app/routes/. ./routes/ 2>/dev/null || true
+COPY --from=builder /app/utils/. ./utils/ 2>/dev/null || true
+COPY --from=builder /app/config/. ./config/ 2>/dev/null || true
 
 # Set proper permissions
 RUN chown -R nodeapp:nodejs /app
@@ -67,10 +66,10 @@ RUN chown -R nodeapp:nodejs /app
 USER nodeapp
 
 # Expose the port the app will run on
-EXPOSE 5000
+EXPOSE 3001
 
 # Environment variables will be passed at runtime
-ENV PORT 5000
+ENV PORT 3001
 ENV HOST "0.0.0.0"
 
 # Start the application with server.js as the entry point
