@@ -1,76 +1,49 @@
-# Build stage
+# Stage 1: Build the application
 FROM node:18-alpine AS builder
 
-# Install Python and build tools for native modules (Node-Gyp)
+# Install build dependencies
 RUN apk add --no-cache python3 make g++
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files for dependency installation
+# Copy dependency manifests
 COPY package.json package-lock.json* ./
 
 # Install dependencies
-RUN npm ci --force # Keep --force for now, or remove if you resolve conflicts cleanly
+RUN npm ci --force
 
-# Copy all files
+# Copy the rest of the app source code
 COPY . .
 
-# TypeScript compilation (if not already handled by server.js)
+# Optional TypeScript compilation
 RUN if [ ! -f "server.js" ] && [ -f "node_modules/.bin/tsc" ]; then \
-        echo "Compiling TypeScript..." && \
-        ./node_modules/.bin/tsc; \
-    else \
-        echo "Using existing server.js or no TypeScript compiler found"; \
-    fi
+    echo "Compiling TypeScript..." && \
+    npm run build || ./node_modules/.bin/tsc; \
+else \
+    echo "Skipping TypeScript compilation"; \
+fi
 
-# Production stage
+# Stage 2: Create the production image
 FROM node:18-alpine AS runner
 
+# Create app directory
 WORKDIR /app
 
-# Set to production environment
-ENV NODE_ENV production
+# Set environment to production
+ENV NODE_ENV=production
 
-# Create a non-root user for security
-RUN addgroup --system --gid 1001 nodejs \
-    && adduser --system --uid 1001 nodeapp
+# Create non-root user
+RUN addgroup -S nodejs && adduser -S nodeapp -G nodejs
 
-# Copy package files
-COPY --from=builder /app/package.json /app/package-lock.json* ./
+# Copy node_modules and built files from builder
+COPY --from=builder /app .
 
-# Install production dependencies only
-RUN npm ci --production --force && npm cache clean --force
-
-# Copy server.js (main entry point)
-COPY --from=builder /app/server.js ./server.js
-
-# Copy compiled JavaScript files and directories if they exist
-# Use separate RUN commands with shell conditionals instead of inline conditionals in COPY
-COPY --from=builder /app/*.js ./
-
-# Create a script to copy directories if they exist
-RUN mkdir -p controllers middleware routes utils config
-
-# Copy necessary directories with proper error handling
-COPY --from=builder ["/app/controllers", "./controllers/"] 2>/dev/null || true
-COPY --from=builder ["/app/middleware", "./middleware/"] 2>/dev/null || true
-COPY --from=builder ["/app/routes", "./routes/"] 2>/dev/null || true
-COPY --from=builder ["/app/utils", "./utils/"] 2>/dev/null || true
-COPY --from=builder ["/app/config", "./config/"] 2>/dev/null || true
-
-# Set proper permissions
-RUN chown -R nodeapp:nodejs /app
-
-# Switch to non-root user
+# Use non-root user
 USER nodeapp
 
-# Expose the port the app will run on
+# Expose the correct port
 EXPOSE 3001
 
-# Environment variables will be passed at runtime
-ENV PORT 3001
-ENV HOST "0.0.0.0"
-
-# Start the application with server.js as the entry point
+# Start the server
 CMD ["node", "server.js"]
