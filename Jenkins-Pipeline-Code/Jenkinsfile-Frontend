@@ -34,18 +34,18 @@ pipeline {
         stage('Create Suppression Files') {
             steps {
                 dir('frontend') {
-                    // Create dependency-check-suppression.xml file
+                    // Create dependency-check-suppression.xml file with proper escaping
                     writeFile file: 'dependency-check-suppression.xml', text: '''<?xml version="1.0" encoding="UTF-8"?>
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
     <!-- Suppress pseudorandom number generator warnings -->
     <suppress>
         <notes>Pseudorandom number generators used for non-security critical operations</notes>
-        <filePath regex="true">.*deployment-service\.ts</filePath>
+        <filePath regex="true">.*deployment-service.ts</filePath>
         <cve>CVE-2020-8927</cve>
     </suppress>
     <suppress>
         <notes>Pseudorandom number generators used for UI components</notes>
-        <filePath regex="true">.*sidebar\.tsx</filePath>
+        <filePath regex="true">.*sidebar.tsx</filePath>
         <cve>CVE-2020-8927</cve>
     </suppress>
     <!-- Add more suppressions as needed -->
