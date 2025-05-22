@@ -4,7 +4,6 @@ pipeline {
     tools {
         jdk 'jdk'
         nodejs 'nodejs'
-        dockerTool 'docker' // Optional if docker is already on the agent
     }
 
     environment {
@@ -68,14 +67,15 @@ pipeline {
         stage('Docker Image Build') {
             steps {
                 dir('server') {
-                    sh '''
-                        docker system prune -f
-                        docker container prune -f
-                        docker build -t "${AWS_ECR_REPO_NAME}" .
-                    '''
+            sh '''
+                docker system prune -f
+                docker container prune -f
+                docker build -f Dockerfile.backend -t "${AWS_ECR_REPO_NAME}" .
+            '''
                 }
             }
         }
+
 
         stage('Push to ECR') {
             steps {
