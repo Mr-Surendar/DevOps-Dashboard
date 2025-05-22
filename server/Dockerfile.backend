@@ -1,6 +1,10 @@
 # Build stage
 FROM node:18-alpine AS builder
 
+# Install Python and build tools for native modules (Node-Gyp)
+# These are necessary for dependencies like 'bcrypt', 'sqlite3', etc. to compile
+RUN apk add --no-cache python3 make g++
+
 # Set working directory
 WORKDIR /app
 
@@ -8,12 +12,12 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install dependencies
-RUN npm ci
+RUN npm ci --force # Keep --force for now, or remove if you resolve conflicts cleanly
 
 # Copy all files
 COPY . .
 
-# Build the application (if TypeScript or other build step is needed)
+# Build the application (if using TypeScript or other build process)
 RUN npm run build
 
 # Production stage
@@ -26,29 +30,34 @@ ENV NODE_ENV production
 
 # Create a non-root user for security
 RUN addgroup --system --gid 1001 nodejs \
-    && adduser --system --uid 1001 appuser
+    && adduser --system --uid 1001 nodeapp
 
 # Copy package files
 COPY --from=builder /app/package.json /app/package-lock.json* ./
 
 # Install production dependencies only
-RUN npm ci --production && npm cache clean --force
+RUN npm ci --production --force && npm cache clean --force
 
 # Copy built application
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server.js ./server.js
 
+# Copy any configuration files needed
+COPY --from=builder /app/config ./config
+COPY --from=builder /app/.env.example ./.env.example
+
 # Set proper permissions
-RUN chown -R appuser:nodejs /app
+RUN chown -R nodeapp:nodejs /app
 
 # Switch to non-root user
-USER appuser
+USER nodeapp
 
 # Expose the port the app will run on
 EXPOSE 3001
 
 # Environment variables will be passed at runtime
 ENV PORT 3001
+ENV HOST "0.0.0.0"
 
 # Start the application
 CMD ["node", "server.js"]
