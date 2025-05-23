@@ -3,6 +3,12 @@ import { asyncHandler } from "../middleware/async.middleware"
 import { AppError } from "../utils/appError"
 import Docker from "dockerode"
 
+const dockerConfig = {
+  socketPath: process.env.DOCKER_SOCKET || "/var/run/docker.sock", // Replace with your Docker socket path
+  host: process.env.DOCKER_HOST || "localhost", // Replace with your Docker host
+  port: process.env.DOCKER_PORT || "2376", // Replace with your Docker port
+}
+
 // Docker client configuration
 let docker: Docker | null = null
 
@@ -17,7 +23,7 @@ try {
     })
   }
 } catch (error) {
-  console.error(`Failed to initialize Docker client: ${error.message}`)
+  console.error(`Failed to initialize Docker client: ${error instanceof Error ? error.message : 'Unknown error'}`)
 }
 
 // @desc    Get Docker data (containers and images)
@@ -49,7 +55,7 @@ export const getDockerData = asyncHandler(async (req: Request, res: Response) =>
       data: { containers, images },
     })
   } catch (error) {
-    throw new AppError(`Error fetching Docker data: ${error.message}`, 500)
+    throw new AppError(`Error fetching Docker data: ${error instanceof Error ? error.message : 'Unknown error'}`, 500)
   }
 })
 
@@ -69,12 +75,6 @@ export const getContainerLogs = asyncHandler(async (req: Request, res: Response)
       })
     }
 
-    // In a real implementation, you would fetch logs from Docker API
-    // Example:
-    // const container = docker.getContainer(id)
-    // const logs = await container.logs({ stdout: true, stderr: true })
-
-    // For now, return empty array until Docker is configured
     const logs: string[] = []
 
     res.status(200).json({
@@ -82,7 +82,7 @@ export const getContainerLogs = asyncHandler(async (req: Request, res: Response)
       data: logs,
     })
   } catch (error) {
-    throw new AppError(`Error fetching container logs: ${error.message}`, 500)
+    throw new AppError(`Error fetching container logs: ${error instanceof Error ? error.message : 'Unknown error'}`, 500)
   }
 })
 
@@ -115,7 +115,7 @@ export const getContainerStats = asyncHandler(async (req: Request, res: Response
       data: stats,
     })
   } catch (error) {
-    throw new AppError(`Error fetching container stats: ${error.message}`, 500)
+    throw new AppError(`Error fetching container stats: ${error instanceof Error ? error.message : 'Unknown error'}`, 500)
   }
 })
 
@@ -146,7 +146,7 @@ export const startContainer = asyncHandler(async (req: Request, res: Response) =
       message: `Container ${id} started successfully`,
     })
   } catch (error) {
-    throw new AppError(`Error starting container: ${error.message}`, 500)
+    throw new AppError(`Error starting container: ${error instanceof Error ? error.message : 'Unknown error'}`, 500)
   }
 })
 
@@ -177,6 +177,6 @@ export const stopContainer = asyncHandler(async (req: Request, res: Response) =>
       message: `Container ${id} stopped successfully`,
     })
   } catch (error) {
-    throw new AppError(`Error stopping container: ${error.message}`, 500)
+    throw new AppError(`Error stopping container: ${error instanceof Error ? error.message : 'Unknown error'}`, 500)
   }
 })

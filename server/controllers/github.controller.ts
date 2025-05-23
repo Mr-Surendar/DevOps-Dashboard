@@ -3,11 +3,10 @@ import { asyncHandler } from "../middleware/async.middleware"
 import { AppError } from "../utils/appError"
 import axios from "axios"
 
-// GitHub client configuration
 const githubConfig = {
-  token: process.env.GITHUB_TOKEN || "",
-  owner: process.env.GITHUB_OWNER || "",
-  repo: process.env.GITHUB_REPO || "",
+  token: process.env.GITHUB_TOKEN || "YOUR_GITHUB_TOKEN", // Replace with your GitHub token
+  owner: process.env.GITHUB_OWNER || "your-username", // Replace with your GitHub username/org
+  repo: process.env.GITHUB_REPO || "your-repo-name", // Replace with your repository name
 }
 
 // Helper function to make authenticated requests to GitHub API
@@ -27,7 +26,7 @@ async function githubRequest(endpoint: string, method = "GET", data = null) {
 
     return response.data
   } catch (error) {
-    console.error(`GitHub API request failed: ${error.message}`)
+    console.error(`GitHub API request failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     throw error
   }
 }
@@ -61,6 +60,6 @@ export const getGithubData = asyncHandler(async (req: Request, res: Response) =>
       data: { pullRequests, repositories },
     })
   } catch (error) {
-    throw new AppError(`Error fetching GitHub data: ${error.message}`, 500)
+    throw new AppError(`Error fetching GitHub data: ${error instanceof Error ? error.message : 'Unknown error'}`, 500)
   }
 })

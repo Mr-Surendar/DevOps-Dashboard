@@ -6,12 +6,9 @@ import { promisify } from "util"
 import * as fs from "fs"
 
 const execAsync = promisify(exec)
-
-// Terraform configuration
 const terraformConfig = {
-  workspaceDir: process.env.TERRAFORM_WORKSPACE_DIR || "",
+  workspaceDir: process.env.TERRAFORM_WORKSPACE_DIR || "/path/to/terraform/workspace", // Replace with your workspace path
 }
-
 // @desc    Get Terraform data
 // @route   GET /api/terraform/data
 // @access  Private
@@ -43,7 +40,7 @@ export const getTerraformData = asyncHandler(async (req: Request, res: Response)
       data: { resources, modules, workspaces },
     })
   } catch (error) {
-    throw new AppError(`Error fetching Terraform data: ${error.message}`, 500)
+    throw new AppError(`Error fetching Terraform data: ${error instanceof Error ? error.message : 'Unknown error'}`, 500)
   }
 })
 
@@ -75,6 +72,6 @@ export const applyTerraform = asyncHandler(async (req: Request, res: Response) =
       message: `Applied Terraform changes for workspace: ${workspace}`,
     })
   } catch (error) {
-    throw new AppError(`Error applying Terraform changes: ${error.message}`, 500)
+    throw new AppError(`Error applying Terraform changes: ${error instanceof Error ? error.message : 'Unknown error'}`, 500)
   }
 })

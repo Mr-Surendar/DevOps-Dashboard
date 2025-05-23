@@ -1,5 +1,8 @@
 {
   "devDependencies": {
-    "@types/express": "^5.0.1"
+    "@types/express": "^5.0.2"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1692.0"
   }
 }

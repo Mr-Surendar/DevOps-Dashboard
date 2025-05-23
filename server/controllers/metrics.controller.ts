@@ -1,144 +1,83 @@
+import AWS from "aws-sdk"
 import type { Request, Response } from "express"
-import { asyncHandler } from "../middleware/async.middleware"
-import { AppError } from "../utils/appError"
-import os from "os"
-import { exec } from "child_process"
-import { promisify } from "util"
+export const AWS_CONFIG = {
+  region: "us-west-2", // Replace with your actual region
+  accessKeyId: "YOUR_AWS_ACCESS_KEY_ID", // Replace with your actual key
+  secretAccessKey: "YOUR_AWS_SECRET_ACCESS_KEY", // Replace with your actual secret
+  cloudWatchEndpoint: "https://monitoring.us-west-2.amazonaws.com", // Update region if needed
+}
 
-const execAsync = promisify(exec)
+export const PROMETHEUS_CONFIG = {
+  url: "http://prometheus:9090", // Replace with your actual Prometheus URL
+  username: "admin", // Replace if you have authentication
+  password: "admin", // Replace if you have authentication
+}
 
-// @desc    Get system metrics
-// @route   GET /api/metrics/system
-// @access  Private
-export const getSystemMetrics = asyncHandler(async (req: Request, res: Response) => {
-  try {
-    // Get CPU usage
-    const cpuCount = os.cpus().length
-    const loadAvg = os.loadavg()[0] // 1 minute load average
-    const cpuUsage = Math.min(Math.round((loadAvg / cpuCount) * 100), 100)
+export const GRAFANA_CONFIG = {
+  url: "http://grafana:3000", // Replace with your actual Grafana URL
+  apiKey: "YOUR_GRAFANA_API_KEY", // Replace with your actual API key
+}
 
-    // Get memory usage
-    const totalMem = os.totalmem()
-    const freeMem = os.freemem()
-    const usedMem = totalMem - freeMem
-    const memoryUsage = Math.round((usedMem / totalMem) * 100)
-
-    // Get disk usage (try to get actual data if possible)
-    let diskUsage = 50 // Default value
-    try {
-      // This works on Linux/macOS
-      const { stdout } = await execAsync("df -h / | awk 'NR==2 {print $5}' | sed 's/%//'")
-      diskUsage = Number.parseInt(stdout.trim(), 10)
-    } catch (error) {
-      console.error("Failed to get disk usage:", error)
-    }
-
-    // Get temperature (try to get actual data if possible)
-    let temperature = 45 // Default value
-    try {
-      // This works on Linux with lm-sensors
-      const { stdout } = await execAsync(
-        "sensors | grep 'CPU\\|Package' | awk '{print $4}' | sed 's/+//' | sed 's/°C//' | head -1",
-      )
-      if (stdout.trim()) {
-        temperature = Number.parseFloat(stdout.trim())
-      }
-    } catch (error) {
-      // Ignore error, use default value
-    }
-
-    // Generate trend based on previous value
-    // In a real implementation, you would store previous values and compare
-    const generateTrend = () => {
-      return ["up", "down", "stable"][Math.floor(Math.random() * 3)]
-    }
-
-    // Generate history data
-    // In a real implementation, you would store historical data
-    const generateHistory = (value: number, variance = 10, length = 10) => {
-      return Array.from({ length }, () => {
-        const change = Math.floor(Math.random() * variance * 2) - variance
-        return Math.max(0, Math.min(100, value + change))
-      })
-    }
-
-    const metrics = {
-      cpu: {
-        value: cpuUsage,
-        trend: generateTrend(),
-        history: generateHistory(cpuUsage),
-      },
-      memory: {
-        value: memoryUsage,
-        trend: generateTrend(),
-        history: generateHistory(memoryUsage),
-      },
-      disk: {
-        value: diskUsage,
-        trend: generateTrend(),
-        history: generateHistory(diskUsage),
-      },
-      temperature: {
-        value: temperature,
-        trend: generateTrend(),
-        history: generateHistory(temperature, 5),
-      },
-    }
-
-    res.status(200).json({
-      success: true,
-      data: metrics,
-    })
-  } catch (error) {
-    throw new AppError(`Error fetching system metrics: ${error.message}`, 500)
-  }
+// Configure AWS
+const cloudwatch = new AWS.CloudWatch({
+  region: process.env.AWS_REGION,
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 })
 
-// @desc    Get network metrics
-// @route   GET /api/metrics/network
-// @access  Private
-export const getNetworkMetrics = asyncHandler(async (req: Request, res: Response) => {
+export const getSystemMetrics = async (req: Request, res: Response) => {
   try {
-    // In a real implementation, you would get actual network metrics
-    // For now, we'll return simulated data
-
-    // Generate random values for incoming and outgoing traffic
-    const incomingValue = Math.floor(Math.random() * 100) + 1
-    const outgoingValue = Math.floor(Math.random() * 100) + 1
-
-    // Generate trend based on previous value
-    // In a real implementation, you would store previous values and compare
-    const generateTrend = () => {
-      return ["up", "down", "stable"][Math.floor(Math.random() * 3)]
+    // Fetch real CPU metrics from AWS CloudWatch
+    const cpuParams = {
+      MetricName: "CPUUtilization",
+      Namespace: "AWS/EC2",
+      StartTime: new Date(Date.now() - 3600000), // 1 hour ago
+      EndTime: new Date(),
+      Period: 300,
+      Statistics: ["Average"],
+      Dimensions: [
+        {
+          Name: "InstanceId",
+          Value: "YOUR_INSTANCE_ID", // Replace with your actual instance ID
+        },
+      ],
     }
 
-    // Generate history data
-    // In a real implementation, you would store historical data
-    const generateHistory = (value: number, variance = 20, length = 10) => {
-      return Array.from({ length }, () => {
-        const change = Math.floor(Math.random() * variance * 2) - variance
-        return Math.max(0, value + change)
-      })
+    const cpuData = await cloudwatch.getMetricStatistics(cpuParams).promise()
+    const latestCpuValue = cpuData.Datapoints?.[cpuData.Datapoints.length - 1]?.Average || 0
+
+    // Fetch memory metrics (you'll need CloudWatch agent installed)
+    const memoryParams = {
+      MetricName: "MemoryUtilization",
+      Namespace: "CWAgent",
+      StartTime: new Date(Date.now() - 3600000),
+      EndTime: new Date(),
+      Period: 300,
+      Statistics: ["Average"],
     }
 
-    const metrics = {
-      incoming: {
-        value: incomingValue,
-        trend: generateTrend(),
-        history: generateHistory(incomingValue),
-      },
-      outgoing: {
-        value: outgoingValue,
-        trend: generateTrend(),
-        history: generateHistory(outgoingValue),
-      },
-    }
+    const memoryData = await cloudwatch.getMetricStatistics(memoryParams).promise()
+    const latestMemoryValue = memoryData.Datapoints?.[memoryData.Datapoints.length - 1]?.Average || 0
 
+    // Return real data
     res.status(200).json({
       success: true,
-      data: metrics,
+      data: {
+        cpu: {
+          value: Math.round(latestCpuValue),
+          trend: "stable", // You can calculate trend from historical data
+          history: cpuData.Datapoints?.map((d) => d.Average) || [],
+        },
+        memory: {
+          value: Math.round(latestMemoryValue),
+          trend: "stable",
+          history: memoryData.Datapoints?.map((d) => d.Average) || [],
+        },
+        // Add disk and temperature metrics similarly
+      },
     })
   } catch (error) {
-    throw new AppError(`Error fetching network metrics: ${error.message}`, 500)
+    console.error("Error fetching system metrics:", error)
+    res.status(500).json({ success: false, error: "Failed to fetch metrics" })
   }
-})
+}

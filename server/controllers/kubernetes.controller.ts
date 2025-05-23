@@ -21,7 +21,7 @@ try {
   k8sApi.core = kc.makeApiClient(k8s.CoreV1Api)
   k8sApi.apps = kc.makeApiClient(k8s.AppsV1Api)
 } catch (error) {
-  console.error(`Failed to initialize Kubernetes client: ${error.message}`)
+  console.error(`Failed to initialize Kubernetes client: ${error instanceof Error ? error.message : 'Unknown error'}`)
 }
 
 // @desc    Get Kubernetes data
@@ -54,6 +54,6 @@ export const getKubernetesData = asyncHandler(async (req: Request, res: Response
       data: { pods, deployments, nodes },
     })
   } catch (error) {
-    throw new AppError(`Error fetching Kubernetes data: ${error.message}`, 500)
+    throw new AppError(`Error fetching Kubernetes data: ${error instanceof Error ? error.message : 'Unknown error'}`, 500)
   }
 })
