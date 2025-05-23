@@ -36,7 +36,7 @@ spec:
             memory: "512Mi"
         env:
           - name: MONGO_CONN_STR
-            value: MONGO_CONN_STR=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@cluster0.99leeu2.mongodb.net/
+            value: MONGO_CONN_STR=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@cluster0.99leeu2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
           - name: MONGO_USERNAME
             valueFrom:
               secretKeyRef:
