@@ -37,7 +37,7 @@ The backend is built with Express.js and provides API endpoints for the frontend
 1. Clone the repository:
 
 \`\`\`bash
-git clone https://github.com/yourusername/devops-dashboard.git
+git clone https://github.com/Mr-Surendar/devops-dashboard.git
 cd devops-dashboard
 \`\`\`
 
